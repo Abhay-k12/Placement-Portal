@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Dashboard - GEHU Placement Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link href="css/company_dashboard.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Main Title -->
+    <div class="main-title">
+        <h1>Company Dashboard - GEHU Placement Portal</h1>
+    </div>
+
+    <!-- Top Navbar -->
+    <nav class="modern-navbar">
+        <div class="nav-container">
+            <div class="nav-content">
+                <!-- Navigation Links -->
+                <div class="nav-links">
+                    <a href="#" class="navbar-item active" onclick="showPage('dashboard')">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        Dashboard
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showPage('studentFilter')">
+                        <span class="material-symbols-outlined">filter_alt</span>
+                        Student Filter
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showPage('recruitment')">
+                        <span class="material-symbols-outlined">business_center</span>
+                        Recruitment
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showPage('bulkOperations')">
+                        <span class="material-symbols-outlined">upload</span>
+                        Bulk Operations
+                    </a>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="nav-right">
+                    <div class="search-container">
+                        <form class="search-form" onsubmit="globalSearch(event)">
+                            <div class="search-wrapper">
+                                <input type="text" placeholder="Search..." class="search-input" id="globalSearchInput">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                            <button type="submit" class="search-btn">
+                                Search
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="mobile-btn">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="mobile-menu">
+                <a href="#" class="mobile-item" onclick="showPage('dashboard')">
+                    Dashboard
+                </a>
+                <a href="#" class="mobile-item" onclick="showPage('studentFilter')">
+                    Student Filter
+                </a>
+                <a href="#" class="mobile-item" onclick="showPage('recruitment')">
+                    Recruitment
+                </a>
+                <a href="#" class="mobile-item" onclick="showPage('bulkOperations')">
+                    Bulk Operations
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <h2 style="margin-left: 25%; margin-top: 5%;">Recruit<span class="danger">ment</span></h2>
+                </div>
+            </div>
+
+            <!-- Company Profile Section -->
+            <div class="admin-profile">
+                <div class="profile-header">
+                    <div class="profile-image-container">
+                        <img src="https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&h=150&fit=crop&crop=face"
+                             alt="HR Manager" class="profile-img" id="companyProfileImg">
+                        <div class="online-status"></div>
+                    </div>
+                    <div class="profile-info">
+                        <h3 class="admin-name" id="companyHrName">Sarah Johnson</h3>
+                        <p class="college-name" id="companyName">Google Inc.</p>
+                        <p class="admin-role" id="companyRole">HR Manager</p>
+                    </div>
+                </div>
+
+                <div class="profile-details">
+                    <div class="detail-section">
+                        <h4>Contact Information</h4>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">mail</span>
+                            <div class="detail-content">
+                                <span class="label">Email Address</span>
+                                <span class="value" id="companyEmail">sarah.johnson@google.com</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">phone</span>
+                            <div class="detail-content">
+                                <span class="label">Phone Number</span>
+                                <span class="value" id="companyPhone">+1 (555) 123-4567</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">location_on</span>
+                            <div class="detail-content">
+                                <span class="label">Location</span>
+                                <span class="value" id="companyLocation">Mountain View, CA</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="logout-btn" onclick="logoutCompany()">
+                        <span class="material-symbols-outlined">logout</span>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main>
+            <!-- Dashboard Page -->
+            <div id="dashboard" class="page-content active">
+                <h1>Dashboard Overview</h1>
+
+                <!-- KPI Cards -->
+                <div class="kpi-grid">
+                    <div class="kpi-card students">
+                        <span class="material-symbols-outlined kpi-icon">school</span>
+                        <div class="kpi-content">
+                            <h3>Total Students</h3>
+                            <div class="kpi-value">1,247</div>
+                            <div class="kpi-trend up">+12 this week</div>
+                            <a href="#" class="kpi-link" onclick="showPage('studentFilter')">
+                                View Students
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card companies">
+                        <span class="material-symbols-outlined kpi-icon">business_center</span>
+                        <div class="kpi-content">
+                            <h3>Active Recruitments</h3>
+                            <div class="kpi-value">5</div>
+                            <div class="kpi-trend neutral">2 completed</div>
+                            <a href="#" class="kpi-link" onclick="showPage('recruitment')">
+                                Manage Recruitments
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card placements">
+                        <span class="material-symbols-outlined kpi-icon">calendar_month</span>
+                        <div class="kpi-content">
+                            <h3>Interviews Scheduled</h3>
+                            <div class="kpi-value">42</div>
+                            <div class="kpi-trend up">+8 this week</div>
+                            <a href="#" class="kpi-link" onclick="showPage('recruitment')">
+                                View Schedule
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card drives">
+                        <span class="material-symbols-outlined kpi-icon">verified</span>
+                        <div class="kpi-content">
+                            <h3>Profile Completion</h3>
+                            <div class="kpi-value">87%</div>
+                            <div class="kpi-trend up">+5% this month</div>
+                            <a href="#" class="kpi-link" onclick="showPage('studentFilter')">
+                                Check Profiles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analytics Charts -->
+                <div class="charts-section">
+                    <h2 class="section-heading">
+                        <span class="material-symbols-outlined">analytics</span>
+                        Recruitment Analytics
+                    </h2>
+
+                    <div class="charts-container">
+                        <div class="chart-wrapper">
+                            <div class="chart-card">
+                                <div class="chart-title">
+                                    <h3>Department-wise Applications</h3>
+                                    <span class="chart-icon material-symbols-outlined">bar_chart</span>
+                                </div>
+
+                                <div class="bar-chart-modern">
+                                    <div class="chart-grid">
+                                        <div class="grid-lines">
+                                            <span class="grid-line">100%</span>
+                                            <span class="grid-line">75%</span>
+                                            <span class="grid-line">50%</span>
+                                            <span class="grid-line">25%</span>
+                                            <span class="grid-line">0%</span>
+                                        </div>
+
+                                        <div class="bars-container">
+                                            <div class="bar-column">
+                                                <div class="bar cse" style="height: 85%;"></div>
+                                                <span class="bar-label">CSE</span>
+                                                <span class="bar-value">85%</span>
+                                            </div>
+
+                                            <div class="bar-column">
+                                                <div class="bar ece" style="height: 65%;"></div>
+                                                <span class="bar-label">ECE</span>
+                                                <span class="bar-value">65%</span>
+                                            </div>
+
+                                            <div class="bar-column">
+                                                <div class="bar ee" style="height: 45%;"></div>
+                                                <span class="bar-label">EE</span>
+                                                <span class="bar-value">45%</span>
+                                            </div>
+
+                                            <div class="bar-column">
+                                                <div class="bar me" style="height: 35%;"></div>
+                                                <span class="bar-label">ME</span>
+                                                <span class="bar-value">35%</span>
+                                            </div>
+
+                                            <div class="bar-column">
+                                                <div class="bar ce" style="height: 25%;"></div>
+                                                <span class="bar-label">CE</span>
+                                                <span class="bar-value">25%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Student Filter Page -->
+            <div id="studentFilter" class="page-content">
+                <h1>Student Filter</h1>
+
+                <div class="filter-section">
+                    <div class="filter-grid">
+                        <div class="form-group">
+                            <label class="form-label">Department</label>
+                            <select class="form-control" id="departmentFilter">
+                                <option value="">All Departments</option>
+                                <option value="CSE">Computer Science</option>
+                                <option value="ECE">Electronics</option>
+                                <option value="ME">Mechanical</option>
+                                <option value="CE">Civil</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">CGPA Range</label>
+                            <select class="form-control" id="cgpaFilter">
+                                <option value="">Any CGPA</option>
+                                <option value="9+">9.0+</option>
+                                <option value="8+">8.0+</option>
+                                <option value="7+">7.0+</option>
+                                <option value="6+">6.0+</option>
+                                <option value="5+">5.0+</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Skills</label>
+                            <select class="form-control" id="skillsFilter">
+                                <option value="">Any Skills</option>
+                                <option value="python">Python</option>
+                                <option value="java">Java</option>
+                                <option value="ml">Machine Learning</option>
+                                <option value="web">Web Development</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Backlogs</label>
+                            <select class="form-control" id="backlogsFilter">
+                                <option value="">Any</option>
+                                <option value="0">No Backlogs</option>
+                                <option value="1-2">1-2 Backlogs</option>
+                                <option value="3+">3+ Backlogs</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-primary" id="applyFilters">
+                            <span class="material-symbols-outlined">search</span>
+                            Apply Filters
+                        </button>
+                        <button class="btn btn-outline" id="resetFilters">
+                            <span class="material-symbols-outlined">refresh</span>
+                            Reset Filters
+                        </button>
+                        <button class="btn btn-success" id="exportResults">
+                            <span class="material-symbols-outlined">download</span>
+                            Export Results
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Results -->
+                <div class="students-grid" id="studentsGrid">
+                    <!-- Student cards will be populated here -->
+                </div>
+            </div>
+
+            <!-- Recruitment Management Page -->
+            <div id="recruitment" class="page-content">
+                <h1>Recruitment Management</h1>
+
+                <div class="filter-actions" style="margin-bottom: 2rem;">
+                    <button class="btn btn-primary" id="createRecruitment">
+                        <span class="material-symbols-outlined">add</span>
+                        Create New Recruitment
+                    </button>
+                </div>
+
+                <!-- Add Event Form -->
+                <div class="event-form" id="eventForm" style="display: none;">
+                    <h3 style="margin-bottom: 1.5rem; color: #1e293b;">Create New Recruitment Event</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Job Title *</label>
+                            <input type="text" class="form-control" id="jobTitle" placeholder="e.g., Software Engineer Intern" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Department *</label>
+                            <select class="form-control" id="eventDepartment" required>
+                                <option value="">Select Department</option>
+                                <option value="CSE">Computer Science</option>
+                                <option value="ECE">Electronics</option>
+                                <option value="ME">Mechanical</option>
+                                <option value="CE">Civil</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Event Date *</label>
+                            <input type="date" class="form-control" id="eventDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Application Deadline *</label>
+                            <input type="date" class="form-control" id="deadline" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Eligibility Criteria</label>
+                        <textarea class="form-control" id="eligibility" rows="3" placeholder="Minimum CGPA, skills required, etc."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Job Description</label>
+                        <textarea class="form-control" id="jobDescription" rows="3" placeholder="Detailed job description and responsibilities"></textarea>
+                    </div>
+                    <div class="filter-actions">
+                        <button class="btn btn-success" id="saveEvent">
+                            <span class="material-symbols-outlined">save</span>
+                            Save Event
+                        </button>
+                        <button class="btn btn-outline" id="cancelEvent">
+                            <span class="material-symbols-outlined">close</span>
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Recruitment Cards -->
+                <div class="recruitment-cards" id="recruitmentCards">
+                    <!-- Recruitment cards will be populated here -->
+                </div>
+            </div>
+
+            <!-- Bulk Operations Page -->
+            <div id="bulkOperations" class="page-content">
+                <h1>Bulk Operations</h1>
+
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">
+                        <span class="material-symbols-outlined">description</span>
+                    </div>
+                    <div class="upload-text">
+                        <h4>Upload Student List</h4>
+                        <p>Drag & drop your Excel file here or click to browse</p>
+                        <p class="text-sm">Supported formats: .xlsx, .xls, .csv</p>
+                    </div>
+                    <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display: none;">
+                    <button class="btn btn-primary" id="selectFileBtn">
+                        <span class="material-symbols-outlined">upload</span>
+                        Select File
+                    </button>
+                </div>
+
+                <div class="filter-actions" style="margin-top: 2rem;">
+                    <button class="btn btn-success" id="sendOALinks">
+                        <span class="material-symbols-outlined">send</span>
+                        Send OA Links
+                    </button>
+                    <button class="btn btn-primary" id="scheduleInterviews">
+                        <span class="material-symbols-outlined">schedule</span>
+                        Schedule Interviews
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/company_dashboard.js"> </script>
+</body>
+</html>

@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Graphic Era Hill University</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+    <link rel="stylesheet" href="css/student_dashboard.css">
+</head>
+<body>
+    <!-- Main Title -->
+    <div class="main-title">
+        <h1>Student Portal - Graphic Era Hill University</h1>
+    </div>
+
+    <!-- Top Navbar -->
+    <nav class="modern-navbar">
+        <div class="nav-container">
+            <div class="nav-content">
+                <!-- Navigation Links -->
+                <div class="nav-links">
+                    <a href="#" class="navbar-item active" onclick="showSection('dashboard')">
+                        <span class="material-symbols-outlined">dashboard</span>
+                        Dashboard
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showSection('profile')">
+                        <span class="material-symbols-outlined">person</span>
+                        Profile
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showSection('events')">
+                        <span class="material-symbols-outlined">event</span>
+                        Events
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showSection('records')">
+                        <span class="material-symbols-outlined">history</span>
+                        Past Records
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showSection('resume')">
+                        <span class="material-symbols-outlined">description</span>
+                        Resume
+                    </a>
+                    <a href="#" class="navbar-item" onclick="showSection('settings')">
+                        <span class="material-symbols-outlined">settings</span>
+                        Settings
+                    </a>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="nav-right">
+                    <div class="search-container">
+                        <form class="search-form" onsubmit="globalSearch(event)">
+                            <div class="search-wrapper">
+                                <input type="text" placeholder="Search..." class="search-input" id="globalSearchInput">
+                                <span class="material-symbols-outlined search-icon">search</span>
+                            </div>
+                            <button type="submit" class="search-btn">
+                                Search
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-btn" class="mobile-btn">
+                        <span class="material-symbols-outlined">menu</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Menu -->
+            <div id="mobile-menu" class="mobile-menu">
+                <a href="#" class="mobile-item" onclick="showSection('dashboard')">
+                    Dashboard
+                </a>
+                <a href="#" class="mobile-item" onclick="showSection('profile')">
+                    Profile
+                </a>
+                <a href="#" class="mobile-item" onclick="showSection('events')">
+                    Events
+                </a>
+                <a href="#" class="mobile-item" onclick="showSection('records')">
+                    Past Records
+                </a>
+                <a href="#" class="mobile-item" onclick="showSection('resume')">
+                    Resume
+                </a>
+                <a href="#" class="mobile-item" onclick="showSection('settings')">
+                    Settings
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside>
+            <div class="top">
+                <div class="logo">
+                    <h2 style="margin-left: 25%; margin-top: 5%;">Student<span class="danger">Profile</span></h2>
+                </div>
+            </div>
+
+            <!-- Student Profile Section -->
+            <div class="admin-profile">
+                <div class="profile-header">
+                    <div class="profile-image-container">
+                        <img src="images/microsoft_logo.png" alt="Student Profile" class="profile-img" id="studentProfileImg">
+                        <div class="online-status"></div>
+                    </div>
+                    <div class="profile-info">
+                        <h3 class="admin-name" id="studentName">ANVESHA</h3>
+                        <p class="college-name" id="collegeName">Graphic Era Hill University</p>
+                        <p class="admin-role" id="studentRole">Student</p>
+                    </div>
+                </div>
+
+                <div class="profile-details">
+                    <div class="detail-section">
+                        <h4>Personal Information</h4>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">person</span>
+                            <div class="detail-content">
+                                <span class="label">Full Name</span>
+                                <span class="value" id="fullName">ANVESHA</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">cake</span>
+                            <div class="detail-content">
+                                <span class="label">Date of Birth</span>
+                                <span class="value" id="dob">08/12/2005</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">business</span>
+                            <div class="detail-content">
+                                <span class="label">Department</span>
+                                <span class="value" id="department">Computer Science & Engineering</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Contact Information</h4>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">mail</span>
+                            <div class="detail-content">
+                                <span class="label">Email Address</span>
+                                <span class="value" id="email">ANVESHA.230122228@gehu.ac.in</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">phone</span>
+                            <div class="detail-content">
+                                <span class="label">Contact Number</span>
+                                <span class="value" id="phone">+91 9368731347</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">location_on</span>
+                            <div class="detail-content">
+                                <span class="label">College</span>
+                                <span class="value" id="college">Graphic Era Hill University, Dehradun</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-section">
+                        <h4>Academic Information</h4>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">school</span>
+                            <div class="detail-content">
+                                <span class="label">Student ID</span>
+                                <span class="value" id="studentId">230122228</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">badge</span>
+                            <div class="detail-content">
+                                <span class="label">Roll Number</span>
+                                <span class="value" id="rollNumber">2318475</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">grade</span>
+                            <div class="detail-content">
+                                <span class="label">Current CGPA</span>
+                                <span class="value" id="cgpa">8.35</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="profile-actions">
+                    <button class="logout-btn" onclick="logoutStudent()">
+                        <span class="material-symbols-outlined">logout</span>
+                        Logout
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <main id="dashboard" class="page-content" style="display: block;">
+            <h1>Dashboard</h1>
+
+            <!-- KPI Cards -->
+            <div class="kpi-grid">
+                <div class="kpi-card students">
+                    <span class="material-symbols-outlined kpi-icon">school</span>
+                    <div class="kpi-content">
+                        <h3>Profile Completion</h3>
+                        <div class="kpi-value">85%</div>
+                        <div class="kpi-trend up">↑ 15% this month</div>
+                        <a href="#" class="kpi-link" onclick="showSection('profile')">
+                            Complete Profile
+                        </a>
+                    </div>
+                </div>
+
+                <div class="kpi-card companies">
+                    <span class="material-symbols-outlined kpi-icon">business</span>
+                    <div class="kpi-content">
+                        <h3>Registered Drives</h3>
+                        <div class="kpi-value">8</div>
+                        <div class="kpi-trend up">↑ 2 this week</div>
+                        <a href="#" class="kpi-link" onclick="showSection('events')">
+                            View Events
+                        </a>
+                    </div>
+                </div>
+
+                <div class="kpi-card placements">
+                    <span class="material-symbols-outlined kpi-icon">work</span>
+                    <div class="kpi-content">
+                        <h3>Shortlists</h3>
+                        <div class="kpi-value">3</div>
+                        <div class="kpi-trend up">Recent: Amazon, Google</div>
+                        <a href="#" class="kpi-link" onclick="showSection('records')">
+                            View Records
+                        </a>
+                    </div>
+                </div>
+
+                <div class="kpi-card drives">
+                    <span class="material-symbols-outlined kpi-icon">event</span>
+                    <div class="kpi-content">
+                        <h3>Upcoming Interviews</h3>
+                        <div class="kpi-value">2</div>
+                        <div class="kpi-trend neutral">Next: Oct 25, 2025</div>
+                        <a href="#" class="kpi-link" onclick="showSection('events')">
+                            View Schedule
+                        </a>
+                    </div>
+                </div>
+
+                <div class="kpi-card pending">
+                    <span class="material-symbols-outlined kpi-icon">pending_actions</span>
+                    <div class="kpi-content">
+                        <h3>Applications Pending</h3>
+                        <div class="kpi-value">5</div>
+                        <div class="kpi-trend down">↓ 3 submitted today</div>
+                        <a href="#" class="kpi-link" onclick="showSection('events')">
+                            Apply Now
+                        </a>
+                    </div>
+                </div>
+
+                <div class="kpi-card salary">
+                    <span class="material-symbols-outlined kpi-icon">payments</span>
+                    <div class="kpi-content">
+                        <h3>Highest Offer</h3>
+                        <div class="kpi-value">₹12 LPA</div>
+                        <div class="kpi-trend up">↑ From Microsoft</div>
+                        <a href="#" class="kpi-link" onclick="showSection('records')">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Charts -->
+            <div class="charts-section">
+                <h2 class="section-heading">
+                    <span class="material-symbols-outlined">analytics</span>
+                    Placement Progress
+                </h2>
+
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <div class="chart-card">
+                            <div class="chart-title">
+                                <h3>Application Status</h3>
+                                <span class="chart-icon material-symbols-outlined">bar_chart</span>
+                            </div>
+
+                            <div class="bar-chart-modern">
+                                <div class="chart-grid">
+                                    <div class="grid-lines">
+                                        <span class="grid-line">100%</span>
+                                        <span class="grid-line">75%</span>
+                                        <span class="grid-line">50%</span>
+                                        <span class="grid-line">25%</span>
+                                        <span class="grid-line">0%</span>
+                                    </div>
+
+                                    <div class="bars-container">
+                                        <div class="bar-column">
+                                            <div class="bar cse" style="height: 80%;"></div>
+                                            <span class="bar-label">Applied</span>
+                                            <span class="bar-value">80%</span>
+                                        </div>
+
+                                        <div class="bar-column">
+                                            <div class="bar ece" style="height: 60%;"></div>
+                                            <span class="bar-label">Shortlisted</span>
+                                            <span class="bar-value">60%</span>
+                                        </div>
+
+                                        <div class="bar-column">
+                                            <div class="bar ee" style="height: 40%;"></div>
+                                            <span class="bar-label">Interview</span>
+                                            <span class="bar-value">40%</span>
+                                        </div>
+
+                                        <div class="bar-column">
+                                            <div class="bar me" style="height: 25%;"></div>
+                                            <span class="bar-label">Selected</span>
+                                            <span class="bar-value">25%</span>
+                                        </div>
+
+                                        <div class="bar-column">
+                                            <div class="bar ce" style="height: 15%;"></div>
+                                            <span class="bar-label">Offered</span>
+                                            <span class="bar-value">15%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="profile" class="page-content" style="display: none;">
+            <h1>Student Profile</h1>
+
+            <!-- Success/Error Messages -->
+            <div id="profileMessage" class="message" style="display: none;"></div>
+
+            <!-- Profile View Mode -->
+            <div class="profile-section" id="profileView">
+                <div class="profile-header-actions">
+                    <button class="edit-profile-btn" onclick="toggleEditMode()">
+                        <span class="material-symbols-outlined">edit</span>
+                        Edit Profile
+                    </button>
+                </div>
+
+                <div class="profile-grid">
+                    <div class="profile-detail-group">
+                        <h3>Personal Information</h3>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">person</span>
+                            <div class="detail-content">
+                                <span class="label">Full Name</span>
+                                <span class="value" id="profileFullName">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">cake</span>
+                            <div class="detail-content">
+                                <span class="label">Date of Birth</span>
+                                <span class="value" id="profileDob">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">phone</span>
+                            <div class="detail-content">
+                                <span class="label">Contact Number</span>
+                                <span class="value" id="profilePhone">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">mail</span>
+                            <div class="detail-content">
+                                <span class="label">Email Address</span>
+                                <span class="value" id="profileEmail">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">transgender</span>
+                            <div class="detail-content">
+                                <span class="label">Gender</span>
+                                <span class="value" id="profileGender">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">home</span>
+                            <div class="detail-content">
+                                <span class="label">Address</span>
+                                <span class="value" id="profileAddress">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-detail-group">
+                        <h3>Academic Information</h3>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">school</span>
+                            <div class="detail-content">
+                                <span class="label">Student ID</span>
+                                <span class="value" id="profileStudentId">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">badge</span>
+                            <div class="detail-content">
+                                <span class="label">Roll Number</span>
+                                <span class="value" id="profileRollNumber">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">business</span>
+                            <div class="detail-content">
+                                <span class="label">Department</span>
+                                <span class="value" id="profileDepartment">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">grade</span>
+                            <div class="detail-content">
+                                <span class="label">Current CGPA</span>
+                                <span class="value" id="profileCgpa">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">groups</span>
+                            <div class="detail-content">
+                                <span class="label">Batch</span>
+                                <span class="value" id="profileBatch">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">book</span>
+                            <div class="detail-content">
+                                <span class="label">Course</span>
+                                <span class="value" id="profileCourse">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-detail-group">
+                        <h3>Academic Performance</h3>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">percent</span>
+                            <div class="detail-content">
+                                <span class="label">10th Percentage</span>
+                                <span class="value" id="profileTenthPercent">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">percent</span>
+                            <div class="detail-content">
+                                <span class="label">12th Percentage</span>
+                                <span class="value" id="profileTwelfthPercent">Loading...</span>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <span class="material-symbols-outlined detail-icon">warning</span>
+                            <div class="detail-content">
+                                <span class="label">Backlogs Count</span>
+                                <span class="value" id="profileBacklogs">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Resume Section -->
+                <div class="resume-section">
+                    <h3>Resume & Documents</h3>
+                    <div class="document-item">
+                        <span class="material-symbols-outlined">description</span>
+                        <div class="document-info">
+                            <span class="document-name" id="resumeFileName">No resume uploaded</span>
+                            <span class="document-status" id="resumeStatus">Not uploaded</span>
+                        </div>
+                        <button class="download-btn" id="downloadResumeBtn" style="display: none;">
+                            <span class="material-symbols-outlined">download</span>
+                        </button>
+                    </div>
+                    <button class="upload-resume-btn" onclick="uploadResume()">
+                        <span class="material-symbols-outlined">upload</span>
+                        Upload Resume
+                    </button>
+                </div>
+            </div>
+
+            <!-- Edit Profile Form -->
+            <div class="profile-section" id="profileEdit" style="display: none;">
+                <div class="profile-header-actions">
+                    <button class="cancel-edit-btn" onclick="toggleEditMode()">
+                        <span class="material-symbols-outlined">close</span>
+                        Cancel
+                    </button>
+                    <button class="save-profile-btn" onclick="saveProfile()">
+                        <span class="material-symbols-outlined">save</span>
+                        Save Changes
+                    </button>
+                </div>
+
+                <form id="profileEditForm" class="edit-profile-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <h3>Personal Information</h3>
+
+                            <div class="form-row">
+                                <div class="form-field">
+                                    <label for="editFirstName">First Name *</label>
+                                    <input type="text" id="editFirstName" name="studentFirstName" required>
+                                </div>
+                                <div class="form-field">
+                                    <label for="editLastName">Last Name *</label>
+                                    <input type="text" id="editLastName" name="studentLastName" required>
+                                </div>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editDob">Date of Birth</label>
+                                <input type="date" id="editDob" name="dateOfBirth">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editGender">Gender</label>
+                                <select id="editGender" name="gender">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Others">Others</option>
+                                </select>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editPhone">Contact Number *</label>
+                                <input type="tel" id="editPhone" name="mobileNo" required>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editEmail">Personal Email *</label>
+                                <input type="email" id="editEmail" name="emailId" required>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editCollegeEmail">College Email</label>
+                                <input type="email" id="editCollegeEmail" name="collegeEmailId" readonly>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editAddress">Address</label>
+                                <textarea id="editAddress" name="address" rows="3"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <h3>Academic Information</h3>
+
+                            <div class="form-field">
+                                <label for="editStudentId">Student ID</label>
+                                <input type="text" id="editStudentId" name="studentAdmissionNumber" readonly>
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editRollNumber">University Roll No</label>
+                                <input type="text" id="editRollNumber" name="studentUniversityRollNo">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editEnrollmentNo">Enrollment No</label>
+                                <input type="text" id="editEnrollmentNo" name="studentEnrollmentNo">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editDepartment">Department</label>
+                                <input type="text" id="editDepartment" name="department">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editCourse">Course</label>
+                                <input type="text" id="editCourse" name="course">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editBatch">Batch</label>
+                                <input type="text" id="editBatch" name="batch">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editCgpa">Current CGPA</label>
+                                <input type="number" id="editCgpa" name="cgpa" step="0.01" min="0" max="10">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <h3>Academic Performance</h3>
+
+                            <div class="form-field">
+                                <label for="editTenthPercent">10th Percentage</label>
+                                <input type="number" id="editTenthPercent" name="tenthPercentage" step="0.01" min="0" max="100">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editTwelfthPercent">12th Percentage</label>
+                                <input type="number" id="editTwelfthPercent" name="twelfthPercentage" step="0.01" min="0" max="100">
+                            </div>
+
+                            <div class="form-field">
+                                <label for="editBacklogs">Backlogs Count</label>
+                                <input type="number" id="editBacklogs" name="backLogsCount" min="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Password Change Section -->
+                    <div class="form-group password-section">
+                        <h3>Change Password</h3>
+                        <div class="form-field">
+                            <label for="editCurrentPassword">Current Password</label>
+                            <input type="password" id="editCurrentPassword" name="currentPassword">
+                        </div>
+                        <div class="form-field">
+                            <label for="editNewPassword">New Password</label>
+                            <input type="password" id="editNewPassword" name="newPassword">
+                        </div>
+                        <div class="form-field">
+                            <label for="editConfirmPassword">Confirm New Password</label>
+                            <input type="password" id="editConfirmPassword" name="confirmPassword">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </main>
+
+        <main id="events" class="page-content" style="display: none;">
+            <h1>Events & Placement Drives</h1>
+
+            <!-- Event Tabs -->
+            <div class="event-tabs">
+                <button class="event-tab active" onclick="switchEventTab(this, 'upcoming')">
+                    Upcoming
+                </button>
+                <button class="event-tab" onclick="switchEventTab(this, 'ongoing')">
+                    Ongoing
+                </button>
+                <button class="event-tab" onclick="switchEventTab(this, 'past')">
+                    Past Events
+                </button>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="event-filters">
+                <input type="text" placeholder="Search events..." class="event-search" oninput="searchEvents(this.value)">
+                <select onchange="filterEventsByCompany(this.value)" class="event-company-filter">
+                    <option value="all">All Companies</option>
+                    <option value="google">Google</option>
+                    <option value="microsoft">Microsoft</option>
+                    <option value="amazon">Amazon</option>
+                    <option value="tcs">TCS</option>
+                </select>
+                <button class="create-event-btn" onclick="showEventForm()">
+                    Register for Event
+                </button>
+            </div>
+
+            <!-- Event Cards Grid -->
+            <div class="event-cards-grid">
+                <!-- Event Card 1 -->
+                <div class="event-card">
+                    <div class="event-card-header">
+                        <div class="event-company-logo">
+                            G
+                        </div>
+                        <div class="event-info">
+                            <h3>Google</h3>
+                            <p class="event-role">SDE Intern</p>
+                        </div>
+                        <span class="event-status">Upcoming</span>
+                    </div>
+                    <div class="event-details">
+                        <p class="event-detail"><strong>Date:</strong> 12 Oct 2025, 10:00 AM</p>
+                        <p class="event-detail"><strong>Mode:</strong> Online</p>
+                        <p class="event-detail"><strong>Eligibility:</strong> CGPA ≥ 8.0</p>
+                        <p class="event-detail"><strong>Package:</strong> ₹15 LPA</p>
+                    </div>
+                    <div class="event-actions">
+                        <button class="event-action-btn" onclick="viewEvent('Google')">View Details</button>
+                        <button class="event-action-btn edit" onclick="registerForEvent('Google')">Register</button>
+                    </div>
+                </div>
+
+                <!-- Event Card 2 -->
+                <div class="event-card">
+                    <div class="event-card-header">
+                        <div class="event-company-logo" style="background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);">
+                            MS
+                        </div>
+                        <div class="event-info">
+                            <h3>Microsoft</h3>
+                            <p class="event-role">Software Engineer</p>
+                        </div>
+                        <span class="event-status">Upcoming</span>
+                    </div>
+                    <div class="event-details">
+                        <p class="event-detail"><strong>Date:</strong> 25 Oct 2025, 9:00 AM</p>
+                        <p class="event-detail"><strong>Mode:</strong> Online</p>
+                        <p class="event-detail"><strong>Eligibility:</strong> CGPA ≥ 7.5</p>
+                        <p class="event-detail"><strong>Package:</strong> ₹18 LPA</p>
+                    </div>
+                    <div class="event-actions">
+                        <button class="event-action-btn" onclick="viewEvent('Microsoft')">View Details</button>
+                        <button class="event-action-btn edit" onclick="registerForEvent('Microsoft')">Register</button>
+                    </div>
+                </div>
+
+                <!-- Event Card 3 -->
+                <div class="event-card">
+                    <div class="event-card-header">
+                        <div class="event-company-logo" style="background: linear-gradient(135deg, #FF9900 0%, #FF6600 100%);">
+                            A
+                        </div>
+                        <div class="event-info">
+                            <h3>Amazon</h3>
+                            <p class="event-role">SDE-1</p>
+                        </div>
+                        <span class="event-status ongoing">Ongoing</span>
+                    </div>
+                    <div class="event-details">
+                        <p class="event-detail"><strong>Date:</strong> 5 Oct 2025, 2:00 PM</p>
+                        <p class="event-detail"><strong>Mode:</strong> Hybrid</p>
+                        <p class="event-detail"><strong>Eligibility:</strong> CGPA ≥ 7.0</p>
+                        <p class="event-detail"><strong>Package:</strong> ₹16 LPA</p>
+                    </div>
+                    <div class="event-actions">
+                        <button class="event-action-btn" onclick="viewEvent('Amazon')">View Details</button>
+                        <button class="event-action-btn edit" onclick="registerForEvent('Amazon')">Already Registered</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="records" class="page-content" style="display: none;">
+            <h1>Past Records</h1>
+            
+            <div class="charts-section">
+                <h2 class="section-heading">
+                    <span class="material-symbols-outlined">history</span>
+                    Application History
+                </h2>
+                
+                <div class="chart-card">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>Company</th>
+                                <th>Role</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Amazon</td>
+                                <td>SDE-1</td>
+                                <td>15 Sep 2025</td>
+                                <td><span class="status-badge status-selected">Selected</span></td>
+                                <td>Offer: ₹16 LPA</td>
+                            </tr>
+                            <tr>
+                                <td>Microsoft</td>
+                                <td>Software Engineer</td>
+                                <td>10 Sep 2025</td>
+                                <td><span class="status-badge status-pending">Interview</span></td>
+                                <td>Technical round cleared</td>
+                            </tr>
+                            <tr>
+                                <td>Google</td>
+                                <td>SDE Intern</td>
+                                <td>5 Sep 2025</td>
+                                <td><span class="status-badge status-pending">Shortlisted</span></td>
+                                <td>Aptitude cleared</td>
+                            </tr>
+                            <tr>
+                                <td>TCS</td>
+                                <td>Software Analyst</td>
+                                <td>1 Sep 2025</td>
+                                <td><span class="status-badge status-rejected">Rejected</span></td>
+                                <td>Technical round</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <main id="resume" class="page-content" style="display: none;">
+            <h1>Resume Management</h1>
+            
+            <div class="charts-section">
+                <h2 class="section-heading">
+                    <span class="material-symbols-outlined">description</span>
+                    Upload & Manage Resume
+                </h2>
+                
+                <div class="chart-card">
+                    <div class="resume-upload-area">
+                        <div class="upload-icon">
+                            <span class="material-symbols-outlined">cloud_upload</span>
+                        </div>
+                        <h3>Upload Your Resume</h3>
+                        <p>Supported format: PDF only. Maximum file size: 5MB.</p>
+                        <input type="file" id="resumeUpload" accept=".pdf" style="display: none;">
+                        <div class="resume-actions">
+                            <button class="event-action-btn" onclick="document.getElementById('resumeUpload').click()">
+                                Select File
+                            </button>
+                            <button class="event-action-btn edit">
+                                Download Current
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <main id="settings" class="page-content" style="display: none;">
+            <h1>Settings</h1>
+            
+            <div class="charts-section">
+                <h2 class="section-heading">
+                    <span class="material-symbols-outlined">settings</span>
+                    Account Settings
+                </h2>
+                
+                <div class="chart-card">
+                    <div class="settings-group">
+                        <h3>Change Password</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Password</h4>
+                                <p>Last changed: 2 months ago</p>
+                            </div>
+                            <button class="event-action-btn">Change Password</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Privacy Settings</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Profile Visibility</h4>
+                                <p>Control who can see your profile</p>
+                            </div>
+                            <button class="event-action-btn">Manage</button>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Contact Information</h4>
+                                <p>Manage who can contact you</p>
+                            </div>
+                            <button class="event-action-btn">Manage</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3>Notification Preferences</h3>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Email Notifications</h4>
+                                <p>Manage email notification settings</p>
+                            </div>
+                            <button class="event-action-btn">Configure</button>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-info">
+                                <h4>Push Notifications</h4>
+                                <p>Manage browser notifications</p>
+                            </div>
+                            <button class="event-action-btn">Configure</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="js/student_dashboard.js"></script>
+</body>
+</html>
