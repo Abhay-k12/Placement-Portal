@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/events")
@@ -80,5 +81,16 @@ public class EventController {
     public ResponseEntity<List<Event>> getPastEvents() {
         List<Event> events = eventService.getPastEvents();
         return ResponseEntity.ok(events);
+    }
+
+    // Get events by company name
+    @GetMapping("/company/{companyName}")
+    public ResponseEntity<List<Event>> getEventsByCompany(@PathVariable String companyName) {
+        try {
+            List<Event> events = eventService.getEventsByCompany(companyName);
+            return ResponseEntity.ok(events);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
     }
 }

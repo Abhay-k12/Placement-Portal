@@ -327,68 +327,113 @@
             </div>
 
             <!-- Recruitment Management Page -->
-            <div id="recruitment" class="page-content">
+            <div id="recruitment" class="page-content" style="display: none;">
                 <h1>Recruitment Management</h1>
 
                 <div class="filter-actions" style="margin-bottom: 2rem;">
                     <button class="btn btn-primary" id="createRecruitment">
                         <span class="material-symbols-outlined">add</span>
-                        Create New Recruitment
+                        Create New Recruitment Event
                     </button>
                 </div>
 
-                <!-- Add Event Form -->
-                <div class="event-form" id="eventForm" style="display: none;">
-                    <h3 style="margin-bottom: 1.5rem; color: #1e293b;">Create New Recruitment Event</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Job Title *</label>
-                            <input type="text" class="form-control" id="jobTitle" placeholder="e.g., Software Engineer Intern" required>
+                <!-- Event Creation Form -->
+                <div id="event-creation-form" style="display: none; margin-bottom: 2rem;">
+                    <div style="background:white; padding:2rem; border-radius:16px; box-shadow:0 4px 6px rgba(0,0,0,0.1); border:1px solid #f1f5f9;">
+                        <h3 style="margin:0 0 1.5rem 0; color:#1e293b; font-size:1.25rem; font-weight:600;">Create New Placement Event</h3>
+                        <form id="addEventForm" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem;">
+                            <div style="grid-column:1/-1;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Event Name *</label>
+                                <input type="text" id="eventName" required placeholder="e.g., Google SDE Hiring Drive 2024"
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Organizing Company *</label>
+                                <input type="text" id="organizingCompany" required placeholder="e.g., Google, Microsoft, TCS"
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Expected CGPA *</label>
+                                <select id="expectedCgpa" required style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;">
+                                    <option value="">Select CGPA Requirement</option>
+                                    <option value="7.0">7.0 and above</option>
+                                    <option value="7.5">7.5 and above</option>
+                                    <option value="8.0">8.0 and above</option>
+                                    <option value="8.5">8.5 and above</option>
+                                    <option value="9.0">9.0 and above</option>
+                                    <option value="9.5">9.5 and above</option>
+                                    <option value="0">No CGPA Barrier</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Job Role</label>
+                                <input type="text" id="jobRole" placeholder="e.g., Software Engineer, Data Analyst"
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Registration Start Date *</label>
+                                <input type="datetime-local" id="registrationStart" required
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Registration End Date *</label>
+                                <input type="datetime-local" id="registrationEnd" required
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Event Mode</label>
+                                <select id="eventMode" style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;">
+                                    <option value="ONLINE">Online</option>
+                                    <option value="OFFLINE">Offline</option>
+                                    <option value="HYBRID">Hybrid</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Expected Package (LPA)</label>
+                                <input type="number" id="expectedPackage" step="0.1" placeholder="e.g., 12.5"
+                                       style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem;" />
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Event Description *</label>
+                                <textarea id="eventDescription" rows="4" required placeholder="Describe the event, job requirements, selection process, etc."
+                                          style="width:100%; padding:1rem; border:2px solid #e5e7eb; border-radius:12px; font-size:0.875rem; resize:vertical;"></textarea>
+                            </div>
+                            <div style="grid-column:1/-1;">
+                                <label style="display:block; margin-bottom:0.5rem; font-weight:500; color:#374151;">Eligible Departments</label>
+                                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:1rem;">
+                                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" name="eligibleDepartments" value="Computer Science" style="width:16px; height:16px;">
+                                        <span>Computer Science</span>
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" name="eligibleDepartments" value="Electronics" style="width:16px; height:16px;">
+                                        <span>Electronics</span>
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" name="eligibleDepartments" value="Mechanical" style="width:16px; height:16px;">
+                                        <span>Mechanical</span>
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" name="eligibleDepartments" value="Civil" style="width:16px; height:16px;">
+                                        <span>Civil</span>
+                                    </label>
+                                    <label style="display:flex; align-items:center; gap:0.5rem;">
+                                        <input type="checkbox" name="eligibleDepartments" value="Electrical" style="width:16px; height:16px;">
+                                        <span>Electrical</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </form>
+                        <div style="display:flex; gap:1rem; margin-top:2rem;">
+                            <button onclick="submitEventForm()" style="background:#10b981; color:white; padding:1rem 2rem; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Create Event</button>
+                            <button onclick="closeEventForm()" style="background:#6b7280; color:white; padding:1rem 2rem; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Cancel</button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Department *</label>
-                            <select class="form-control" id="eventDepartment" required>
-                                <option value="">Select Department</option>
-                                <option value="CSE">Computer Science</option>
-                                <option value="ECE">Electronics</option>
-                                <option value="ME">Mechanical</option>
-                                <option value="CE">Civil</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Event Date *</label>
-                            <input type="date" class="form-control" id="eventDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Application Deadline *</label>
-                            <input type="date" class="form-control" id="deadline" required>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Eligibility Criteria</label>
-                        <textarea class="form-control" id="eligibility" rows="3" placeholder="Minimum CGPA, skills required, etc."></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Job Description</label>
-                        <textarea class="form-control" id="jobDescription" rows="3" placeholder="Detailed job description and responsibilities"></textarea>
-                    </div>
-                    <div class="filter-actions">
-                        <button class="btn btn-success" id="saveEvent">
-                            <span class="material-symbols-outlined">save</span>
-                            Save Event
-                        </button>
-                        <button class="btn btn-outline" id="cancelEvent">
-                            <span class="material-symbols-outlined">close</span>
-                            Cancel
-                        </button>
                     </div>
                 </div>
 
-                <!-- Recruitment Cards -->
+                <!-- Recruitment Events Grid -->
                 <div class="recruitment-cards" id="recruitmentCards">
-                    <!-- Recruitment cards will be populated here -->
+                    <!-- Events will be populated here dynamically -->
                 </div>
             </div>
 
