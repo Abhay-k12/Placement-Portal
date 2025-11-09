@@ -306,4 +306,43 @@ public class StudentController {
             ));
         }
     }
+
+    // Add these endpoints to your StudentController.java
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<Student>> filterStudents(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) Double minCgpa,
+            @RequestParam(required = false) Integer maxBacklogs,
+            @RequestParam(required = false) String batch) {
+
+        try {
+            List<Student> filteredStudents = studentService.filterStudents(department, minCgpa, maxBacklogs, batch);
+            return ResponseEntity.ok(filteredStudents);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @GetMapping("/export/filtered")
+    public ResponseEntity<byte[]> exportFilteredStudents(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) Double minCgpa,
+            @RequestParam(required = false) Integer maxBacklogs,
+            @RequestParam(required = false) String batch) {
+
+        try {
+            byte[] excelData = studentService.exportFilteredStudents(department, minCgpa, maxBacklogs, batch);
+
+            return ResponseEntity.ok()
+                    .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    .header("Content-Disposition", "attachment; filename=\"filtered_students.xlsx\"")
+                    .body(excelData);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 }

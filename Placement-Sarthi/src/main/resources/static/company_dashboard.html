@@ -257,7 +257,7 @@
                 </div>
             </div>
 
-            <!-- Student Filter Page -->
+            <<!-- Student Filter Page -->
             <div id="studentFilter" class="page-content">
                 <h1>Student Filter</h1>
 
@@ -267,60 +267,75 @@
                             <label class="form-label">Department</label>
                             <select class="form-control" id="departmentFilter">
                                 <option value="">All Departments</option>
-                                <option value="CSE">Computer Science</option>
-                                <option value="ECE">Electronics</option>
-                                <option value="ME">Mechanical</option>
-                                <option value="CE">Civil</option>
+                                <option value="Computer Science">Computer Science</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Mechanical">Mechanical</option>
+                                <option value="Civil">Civil</option>
+                                <option value="Electrical">Electrical</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label class="form-label">CGPA Range</label>
                             <select class="form-control" id="cgpaFilter">
                                 <option value="">Any CGPA</option>
-                                <option value="9+">9.0+</option>
-                                <option value="8+">8.0+</option>
-                                <option value="7+">7.0+</option>
-                                <option value="6+">6.0+</option>
-                                <option value="5+">5.0+</option>
+                                <option value="9.0">9.0+</option>
+                                <option value="8.5">8.5+</option>
+                                <option value="8.0">8.0+</option>
+                                <option value="7.5">7.5+</option>
+                                <option value="7.0">7.0+</option>
+                                <option value="6.5">6.5+</option>
+                                <option value="6.0">6.0+</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Skills</label>
-                            <select class="form-control" id="skillsFilter">
-                                <option value="">Any Skills</option>
-                                <option value="python">Python</option>
-                                <option value="java">Java</option>
-                                <option value="ml">Machine Learning</option>
-                                <option value="web">Web Development</option>
+                            <label class="form-label">Batch/Year</label>
+                            <select class="form-control" id="batchFilter">
+                                <option value="">All Batches</option>
+                                <option value="2024">2024</option>
+                                <option value="2025">2025</option>
+                                <option value="2026">2026</option>
+                                <option value="2027">2027</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Backlogs</label>
+                            <label class="form-label">Maximum Backlogs</label>
                             <select class="form-control" id="backlogsFilter">
-                                <option value="">Any</option>
+                                <option value="">Any Backlogs</option>
                                 <option value="0">No Backlogs</option>
-                                <option value="1-2">1-2 Backlogs</option>
-                                <option value="3+">3+ Backlogs</option>
+                                <option value="1">Max 1 Backlog</option>
+                                <option value="2">Max 2 Backlogs</option>
+                                <option value="3">Max 3 Backlogs</option>
                             </select>
                         </div>
                     </div>
                     <div class="filter-actions">
-                        <button class="btn btn-primary" id="applyFilters">
+                        <button class="btn btn-primary" id="applyFilters" onclick="applyFilters()">
                             <span class="material-symbols-outlined">search</span>
                             Apply Filters
                         </button>
-                        <button class="btn btn-outline" id="resetFilters">
+                        <button class="btn btn-outline" id="resetFilters" onclick="resetFilters()">
                             <span class="material-symbols-outlined">refresh</span>
                             Reset Filters
                         </button>
-                        <button class="btn btn-success" id="exportResults">
+                        <button class="btn btn-success" id="exportResults" onclick="exportFilteredStudents()">
                             <span class="material-symbols-outlined">download</span>
-                            Export Results
+                            Export to Excel
                         </button>
                     </div>
                 </div>
 
-                <!-- Student Results -->
+                <!-- Results Summary -->
+                <div class="results-summary" id="resultsSummary" style="display: none;">
+                    <div class="summary-card">
+                        <span class="material-symbols-outlined">group</span>
+                        <div>
+                            <h3 id="totalStudents">0</h3>
+                            <p>Students Found</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Results - ADD THIS CONTAINER -->
                 <div class="students-grid" id="studentsGrid">
                     <!-- Student cards will be populated here -->
                 </div>

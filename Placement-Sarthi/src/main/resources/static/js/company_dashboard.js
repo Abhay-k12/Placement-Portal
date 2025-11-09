@@ -1,5 +1,3 @@
-// Company Dashboard JavaScript - Fixed version
-
 // Global variables
 let currentEvents = [];
 let isEditMode = false;
@@ -71,7 +69,7 @@ function getPageIdFromNavItem(navText) {
     return 'dashboard'; // default fallback
 }
 
-// Page navigation
+// SINGLE Page navigation function
 function showPage(pageId) {
     console.log('Showing page:', pageId);
 
@@ -111,6 +109,9 @@ function showPage(pageId) {
     // Initialize specific page functionality
     if (pageId === 'recruitment') {
         initializeRecruitmentPage();
+    } else if (pageId === 'studentFilter') {
+        console.log('🚀 Initializing student filter page from showPage');
+        initializeStudentFilterPage();
     }
 }
 
@@ -733,3 +734,275 @@ function showRecruitmentMessage(message, type) {
         messageDiv.style.display = 'none';
     }, 5000);
 }
+
+// =============================================
+// STUDENT FILTER FUNCTIONS - CORRECTED VERSION
+// =============================================
+
+function initializeStudentFilterPage() {
+    console.log('🚀 STUDENT FILTER PAGE INITIALIZED');
+
+    // Check if all required elements exist
+    const applyFiltersBtn = document.getElementById('applyFilters');
+    const resetFiltersBtn = document.getElementById('resetFilters');
+    const exportResultsBtn = document.getElementById('exportResults');
+    const studentsGrid = document.getElementById('studentsGrid');
+
+    console.log('📋 Element check:');
+    console.log('- applyFiltersBtn:', applyFiltersBtn);
+    console.log('- resetFiltersBtn:', resetFiltersBtn);
+    console.log('- exportResultsBtn:', exportResultsBtn);
+    console.log('- studentsGrid:', studentsGrid);
+
+    // Load students immediately
+    loadAllStudents();
+}
+
+// Student Filter Functions - GLOBAL SCOPE
+window.applyFilters = async function() {
+    console.log('🎯 APPLY FILTERS FUNCTION CALLED!');
+
+    try {
+        const filters = getCurrentFilters();
+        console.log('Filters:', filters);
+
+        const queryParams = new URLSearchParams();
+        if (filters.department) queryParams.append('department', filters.department);
+        if (filters.minCgpa) queryParams.append('minCgpa', filters.minCgpa);
+        if (filters.maxBacklogs !== null) queryParams.append('maxBacklogs', filters.maxBacklogs);
+        if (filters.batch) queryParams.append('batch', filters.batch);
+
+        const url = `http://localhost:8081/api/students/filter?${queryParams}`;
+        console.log('Fetching from:', url);
+
+        const response = await fetch(url);
+        console.log('Response status:', response.status);
+
+        if (response.ok) {
+            const students = await response.json();
+            console.log('Students received:', students);
+            displayFilteredStudents(students);
+            updateResultsSummary(students.length);
+            showStudentFilterMessage(`Found ${students.length} students`, 'success');
+        } else {
+            console.error('Server error:', response.status);
+            showStudentFilterMessage('Error applying filters', 'error');
+        }
+    } catch (error) {
+        console.error('Network error:', error);
+        showStudentFilterMessage('Network error', 'error');
+    }
+};
+
+window.resetFilters = function() {
+    console.log('🔄 RESET FILTERS FUNCTION CALLED!');
+    document.getElementById('departmentFilter').value = '';
+    document.getElementById('cgpaFilter').value = '';
+    document.getElementById('batchFilter').value = '';
+    document.getElementById('backlogsFilter').value = '';
+
+    loadAllStudents();
+    showStudentFilterMessage('Filters reset', 'success');
+};
+
+window.exportFilteredStudents = async function() {
+    console.log('💾 EXPORT FILTERS FUNCTION CALLED!');
+    showStudentFilterMessage('Export feature coming soon', 'info');
+};
+
+// Helper functions also need to be global
+window.getCurrentFilters = function() {
+    const department = document.getElementById('departmentFilter').value;
+    const cgpaFilter = document.getElementById('cgpaFilter').value;
+    const batch = document.getElementById('batchFilter').value;
+    const backlogsFilter = document.getElementById('backlogsFilter').value;
+
+    return {
+        department: department || null,
+        minCgpa: cgpaFilter ? parseFloat(cgpaFilter) : null,
+        batch: batch || null,
+        maxBacklogs: backlogsFilter !== '' ? parseInt(backlogsFilter) : null
+    };
+};
+
+window.displayFilteredStudents = function(students) {
+    const studentsGrid = document.getElementById('studentsGrid');
+    if (!studentsGrid) {
+        console.error('❌ studentsGrid element not found');
+        return;
+    }
+
+    if (!students || students.length === 0) {
+        studentsGrid.innerHTML = `
+            <div class="no-results">
+                <span class="material-symbols-outlined">search_off</span>
+                <h3>No Students Found</h3>
+                <p>Try adjusting your filters to see more results.</p>
+            </div>
+        `;
+        return;
+    }
+
+    studentsGrid.innerHTML = students.map(student => `
+        <div class="student-card">
+            <div class="student-header">
+                <div class="student-avatar">
+                    ${getStudentInitials(student.studentFirstName, student.studentLastName)}
+                </div>
+                <div class="student-info">
+                    <h3>${student.studentFirstName} ${student.studentLastName}</h3>
+                    <p class="student-id">${student.studentAdmissionNumber}</p>
+                </div>
+            </div>
+            <div class="student-details">
+                <div class="detail-row">
+                    <span class="label">Department:</span>
+                    <span class="value">${student.department || 'Not specified'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Batch:</span>
+                    <span class="value">${student.batch || 'Not specified'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">CGPA:</span>
+                    <span class="value ${getCgpaClass(student.cgpa)}">${student.cgpa || 'Not specified'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Backlogs:</span>
+                    <span class="value ${getBacklogsClass(student.backLogsCount)}">${student.backLogsCount || 0}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email:</span>
+                    <span class="value">${student.emailId || 'Not specified'}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Mobile:</span>
+                    <span class="value">${student.mobileNo || 'Not specified'}</span>
+                </div>
+                ${student.resumeLink ? `
+                <div class="detail-row">
+                    <span class="label">Resume:</span>
+                    <a href="${student.resumeLink}" target="_blank" class="resume-link">View Resume</a>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    `).join('');
+};
+
+window.getStudentInitials = function(firstName, lastName) {
+    if (!firstName && !lastName) return 'ST';
+    return ((firstName?.[0] || '') + (lastName?.[0] || '')).toUpperCase();
+};
+
+window.getCgpaClass = function(cgpa) {
+    if (!cgpa) return '';
+    if (cgpa >= 8.5) return 'excellent';
+    if (cgpa >= 7.5) return 'good';
+    if (cgpa >= 6.5) return 'average';
+    return 'low';
+};
+
+window.getBacklogsClass = function(backlogs) {
+    if (!backlogs) return '';
+    if (backlogs === 0) return 'no-backlogs';
+    if (backlogs <= 2) return 'few-backlogs';
+    return 'many-backlogs';
+};
+
+window.updateResultsSummary = function(count) {
+    const resultsSummary = document.getElementById('resultsSummary');
+    const totalStudents = document.getElementById('totalStudents');
+
+    if (resultsSummary && totalStudents) {
+        totalStudents.textContent = count;
+        resultsSummary.style.display = 'block';
+    }
+};
+
+window.loadAllStudents = async function() {
+    console.log('📥 Loading all students...');
+    try {
+        const response = await fetch('http://localhost:8081/api/students');
+        if (response.ok) {
+            const students = await response.json();
+            console.log('Students loaded:', students);
+            displayFilteredStudents(students);
+            updateResultsSummary(students.length);
+        } else {
+            console.error('Failed to load students');
+        }
+    } catch (error) {
+        console.error('Error loading students:', error);
+        displayFallbackStudents();
+    }
+};
+
+window.displayFallbackStudents = function() {
+    const studentsGrid = document.getElementById('studentsGrid');
+    if (!studentsGrid) return;
+
+    studentsGrid.innerHTML = `
+        <div class="student-card">
+            <div class="student-header">
+                <div class="student-avatar">
+                    JD
+                </div>
+                <div class="student-info">
+                    <h3>John Doe</h3>
+                    <p class="student-id">STU001</p>
+                </div>
+            </div>
+            <div class="student-details">
+                <div class="detail-row">
+                    <span class="label">Department:</span>
+                    <span class="value">Computer Science</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Batch:</span>
+                    <span class="value">2024</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">CGPA:</span>
+                    <span class="value excellent">8.7</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Backlogs:</span>
+                    <span class="value no-backlogs">0</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Email:</span>
+                    <span class="value">john.doe@example.com</span>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+window.showStudentFilterMessage = function(message, type) {
+    let messageDiv = document.getElementById('studentFilterMessage');
+    if (!messageDiv) {
+        messageDiv = document.createElement('div');
+        messageDiv.id = 'studentFilterMessage';
+        messageDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            max-width: 400px;
+        `;
+        document.body.appendChild(messageDiv);
+    }
+
+    messageDiv.textContent = message;
+    messageDiv.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+    messageDiv.style.display = 'block';
+
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
+};

@@ -10,6 +10,7 @@ public interface StudentService {
     Student updateStudent(String admissionNumber, Student student);
     void deleteStudent(String admissionNumber);
     boolean studentExists(String admissionNumber);
-
+    List<Student> filterStudents(String department, Double minCgpa, Integer maxBacklogs, String batch);
+    byte[] exportFilteredStudents(String department, Double minCgpa, Integer maxBacklogs, String batch);
     Student getStudentById(Long studentId);
 }

@@ -4,11 +4,12 @@ import com.PlacementPortal.Placement.Sarthi.entity.Student;
 import com.PlacementPortal.Placement.Sarthi.repository.StudentRepository;
 import com.PlacementPortal.Placement.Sarthi.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import java.io.ByteArrayOutputStream;
 
 import java.util.List;
 import java.util.Optional;
@@ -81,5 +82,85 @@ public class StudentServiceImpl implements StudentService {
     public Student getStudentById(Long studentId) {
         Optional<Student> student = studentRepository.findById(String.valueOf(studentId));
         return student.orElse(null); // Return Student or null
+    }
+
+    @Override
+    public List<Student> filterStudents(String department, Double minCgpa, Integer maxBacklogs, String batch) {
+        Specification<Student> spec = Specification.where(null);
+
+        if (department != null && !department.isEmpty()) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("department"), department));
+        }
+
+        if (minCgpa != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.greaterThanOrEqualTo(root.get("cgpa"), minCgpa));
+        }
+
+        if (maxBacklogs != null) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.lessThanOrEqualTo(root.get("backLogsCount"), maxBacklogs));
+        }
+
+        if (batch != null && !batch.isEmpty()) {
+            spec = spec.and((root, query, criteriaBuilder) ->
+                    criteriaBuilder.equal(root.get("batch"), batch));
+        }
+
+        return studentRepository.findAll(spec);
+    }
+
+    @Override
+    public byte[] exportFilteredStudents(String department, Double minCgpa, Integer maxBacklogs, String batch) {
+        List<Student> students = filterStudents(department, minCgpa, maxBacklogs, batch);
+
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Filtered Students");
+
+            // Create header row
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                    "Admission Number", "First Name", "Last Name",
+                    "Department", "Batch", "CGPA", "Backlogs",
+                    "Email", "Mobile", "Course", "University Roll No"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+            }
+
+            // Fill data rows
+            int rowNum = 1;
+            for (Student student : students) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0).setCellValue(student.getStudentAdmissionNumber() != null ? student.getStudentAdmissionNumber() : "");
+                row.createCell(1).setCellValue(student.getStudentFirstName() != null ? student.getStudentFirstName() : "");
+                row.createCell(2).setCellValue(student.getStudentLastName() != null ? student.getStudentLastName() : "");
+                row.createCell(3).setCellValue(student.getDepartment() != null ? student.getDepartment() : "");
+                row.createCell(4).setCellValue(student.getBatch() != null ? student.getBatch() : "");
+                row.createCell(5).setCellValue(student.getCgpa() != null ? student.getCgpa() : 0.0);
+                row.createCell(6).setCellValue(student.getBackLogsCount() != null ? student.getBackLogsCount() : 0);
+                row.createCell(7).setCellValue(student.getEmailId() != null ? student.getEmailId() : "");
+                row.createCell(8).setCellValue(student.getMobileNo() != null ? student.getMobileNo() : "");
+                row.createCell(9).setCellValue(student.getCourse() != null ? student.getCourse() : "");
+                row.createCell(10).setCellValue(student.getStudentUniversityRollNo() != null ? student.getStudentUniversityRollNo() : "");
+            }
+
+            // Auto-size columns
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write to byte array
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating Excel file", e);
+        }
     }
 }
