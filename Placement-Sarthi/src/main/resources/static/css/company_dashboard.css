@@ -1588,3 +1588,36 @@
             margin-bottom: 1rem;
             opacity: 0.5;
         }
+
+        .event-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .event-status.upcoming {
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fbbf24;
+        }
+
+        .event-status.ongoing {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .event-status.completed {
+            background: #e5e7eb;
+            color: #374151;
+            border: 1px solid #9ca3af;
+        }
+
+        .event-status.cancelled {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #ef4444;
+        }

@@ -8,7 +8,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeDashboard() {
-    console.log('Initializing dashboard...');
 
     // Load company profile first
     loadCompanyProfile();
@@ -110,7 +109,6 @@ function showPage(pageId) {
     if (pageId === 'recruitment') {
         initializeRecruitmentPage();
     } else if (pageId === 'studentFilter') {
-        console.log('🚀 Initializing student filter page from showPage');
         initializeStudentFilterPage();
     }
 }
@@ -167,7 +165,6 @@ function setupGlobalSearch() {
             if (searchInput) {
                 const query = searchInput.value;
                 alert(`Searching for: ${query}`);
-                // In a real implementation, you would perform a global search
             }
         });
     }
@@ -184,7 +181,7 @@ function globalSearch(event) {
 function logoutCompany() {
     if (confirm('Are you sure you want to logout?')) {
         sessionStorage.removeItem('currentUser');
-        window.location.href = 'login.html';
+        window.location.href = 'login_page.html';
     }
 }
 
@@ -193,7 +190,6 @@ async function loadCompanyProfile() {
     const currentUser = sessionStorage.getItem('currentUser');
 
     if (!currentUser) {
-        console.log('No user logged in');
         return;
     }
 
@@ -212,14 +208,11 @@ async function loadCompanyProfile() {
         // If backend fetch fails, use stored data
         if (!companyData) {
             companyData = user.companyData;
-            console.log('Using stored company data');
         } else {
             // Update session storage with fresh data
             user.companyData = companyData;
             sessionStorage.setItem('currentUser', JSON.stringify(user));
         }
-
-        console.log('Loading company profile:', companyData);
 
         // Update profile information in sidebar
         updateCompanyProfileElement('.admin-name', companyData.hrName || 'HR Manager');
@@ -305,30 +298,35 @@ function loadStoredCompanyData(companyData) {
     updateCompanyDetailItem('Location', companyData.location || 'Not specified');
 }
 
-// Recruitment Management Functions
 function initializeRecruitmentPage() {
-    console.log('Initializing recruitment page...');
     loadCompanyEvents();
+    startEventStatusAutoRefresh();
 }
 
-// Load company's events
 async function loadCompanyEvents() {
     try {
         const currentUser = sessionStorage.getItem('currentUser');
         if (!currentUser) {
-            console.log('No user logged in');
             return;
         }
 
         const user = JSON.parse(currentUser);
         const companyName = user.companyData?.companyName || user.name;
-        console.log('Loading events for company:', companyName);
 
         const response = await fetch(`http://localhost:8081/api/events/company/${encodeURIComponent(companyName)}`);
 
         if (response.ok) {
-            currentEvents = await response.json();
-            console.log('Events loaded:', currentEvents);
+            let events = await response.json();
+
+            // Classify events based on current date
+            events = events.map(event => {
+                return {
+                    ...event,
+                    status: classifyEventStatus(event)
+                };
+            });
+
+            currentEvents = events;
             displayEvents(currentEvents);
         } else {
             console.error('Failed to load events. Status:', response.status);
@@ -342,7 +340,37 @@ async function loadCompanyEvents() {
     }
 }
 
-// Display events
+// Function to classify event status based on dates
+function classifyEventStatus(event) {
+    const now = new Date();
+    const registrationStart = new Date(event.registrationStart);
+    const registrationEnd = new Date(event.registrationEnd);
+
+    // If event is cancelled, keep it as cancelled
+    if (event.status === 'CANCELLED') {
+        return 'CANCELLED';
+    }
+
+    // If registration hasn't started yet
+    if (now < registrationStart) {
+        return 'UPCOMING';
+    }
+
+    // If registration is ongoing (current time is between start and end)
+    if (now >= registrationStart && now <= registrationEnd) {
+        return 'ONGOING';
+    }
+
+    // If registration has ended
+    if (now > registrationEnd) {
+        return 'COMPLETED';
+    }
+
+    // Default fallback
+    return 'UPCOMING';
+}
+
+
 function displayEvents(events) {
     const recruitmentCards = document.getElementById('recruitmentCards');
     if (!recruitmentCards) return;
@@ -376,6 +404,7 @@ function displayEvents(events) {
                 <p class="event-detail"><strong>CGPA Required:</strong> ${event.expectedCgpa ? event.expectedCgpa + '+' : 'Not specified'}</p>
                 <p class="event-detail"><strong>Package:</strong> ${event.expectedPackage ? '₹' + event.expectedPackage + ' LPA' : 'Not specified'}</p>
                 <p class="event-detail"><strong>Departments:</strong> ${getEligibleDepartmentsDisplay(event.eligibleDepartments)}</p>
+                <p class="event-detail"><strong>Status:</strong> ${getStatusDescription(event.status)}</p>
             </div>
             <div class="event-actions">
                 <button class="event-action-btn" onclick="viewEventDetails(${event.eventId})">View Details</button>
@@ -384,6 +413,27 @@ function displayEvents(events) {
             </div>
         </div>
     `).join('');
+}
+
+// Helper function to get status description
+function getStatusDescription(status) {
+    const statusDescriptions = {
+        'UPCOMING': 'Registration will start soon',
+        'ONGOING': 'Registration is currently open',
+        'COMPLETED': 'Registration has ended',
+        'CANCELLED': 'Event has been cancelled'
+    };
+    return statusDescriptions[status] || 'Status not specified';
+}
+
+function getStatusClass(status) {
+    const statusClasses = {
+        'UPCOMING': 'upcoming',
+        'ONGOING': 'ongoing',
+        'COMPLETED': 'completed',
+        'CANCELLED': 'cancelled'
+    };
+    return statusClasses[status] || 'upcoming';
 }
 
 // Display fallback events
@@ -486,8 +536,6 @@ async function submitEventForm() {
             return;
         }
 
-        console.log('Submitting event to /create endpoint:', formData);
-
         const response = await fetch('http://localhost:8081/api/events/create', {
             method: 'POST',
             headers: {
@@ -496,7 +544,6 @@ async function submitEventForm() {
             body: JSON.stringify(formData)
         });
 
-        console.log('Response status:', response.status);
 
         if (response.ok) {
             const newEvent = await response.json();
@@ -514,7 +561,7 @@ async function submitEventForm() {
     }
 }
 
-// Get form data
+// Update the getEventFormData function
 function getEventFormData() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     const companyName = currentUser.companyData?.companyName || currentUser.name;
@@ -523,18 +570,35 @@ function getEventFormData() {
     const selectedDepartments = Array.from(document.querySelectorAll('input[name="eligibleDepartments"]:checked'))
         .map(checkbox => checkbox.value);
 
+    const registrationStart = document.getElementById('registrationStart')?.value;
+    const registrationEnd = document.getElementById('registrationEnd')?.value;
+
+    // Determine initial status based on dates
+    let status = 'UPCOMING';
+    if (registrationStart && registrationEnd) {
+        const now = new Date();
+        const startDate = new Date(registrationStart);
+        const endDate = new Date(registrationEnd);
+
+        if (now >= startDate && now <= endDate) {
+            status = 'ONGOING';
+        } else if (now > endDate) {
+            status = 'COMPLETED';
+        }
+    }
+
     return {
         eventName: document.getElementById('eventName')?.value || '',
         organizingCompany: companyName,
         expectedCgpa: parseFloat(document.getElementById('expectedCgpa')?.value) || 0,
         jobRole: document.getElementById('jobRole')?.value || '',
-        registrationStart: document.getElementById('registrationStart')?.value || '',
-        registrationEnd: document.getElementById('registrationEnd')?.value || '',
+        registrationStart: registrationStart || '',
+        registrationEnd: registrationEnd || '',
         eventMode: document.getElementById('eventMode')?.value || 'ONLINE',
         expectedPackage: parseFloat(document.getElementById('expectedPackage')?.value) || null,
         eventDescription: document.getElementById('eventDescription')?.value || '',
         eligibleDepartments: JSON.stringify(selectedDepartments),
-        status: 'UPCOMING' // Default status
+        status: status // Auto-determined status
     };
 }
 
@@ -617,8 +681,6 @@ async function updateEvent(eventId) {
         if (!validateEventForm(formData)) {
             return;
         }
-
-        console.log('Updating event:', eventId, formData);
 
         const response = await fetch(`http://localhost:8081/api/events/${eventId}`, {
             method: 'PUT',
@@ -735,9 +797,6 @@ function showRecruitmentMessage(message, type) {
     }, 5000);
 }
 
-// =============================================
-// STUDENT FILTER FUNCTIONS - CORRECTED VERSION
-// =============================================
 
 function initializeStudentFilterPage() {
     console.log('🚀 STUDENT FILTER PAGE INITIALIZED');
@@ -760,11 +819,9 @@ function initializeStudentFilterPage() {
 
 // Student Filter Functions - GLOBAL SCOPE
 window.applyFilters = async function() {
-    console.log('🎯 APPLY FILTERS FUNCTION CALLED!');
 
     try {
         const filters = getCurrentFilters();
-        console.log('Filters:', filters);
 
         const queryParams = new URLSearchParams();
         if (filters.department) queryParams.append('department', filters.department);
@@ -773,10 +830,8 @@ window.applyFilters = async function() {
         if (filters.batch) queryParams.append('batch', filters.batch);
 
         const url = `http://localhost:8081/api/students/filter?${queryParams}`;
-        console.log('Fetching from:', url);
 
         const response = await fetch(url);
-        console.log('Response status:', response.status);
 
         if (response.ok) {
             const students = await response.json();
@@ -795,7 +850,6 @@ window.applyFilters = async function() {
 };
 
 window.resetFilters = function() {
-    console.log('🔄 RESET FILTERS FUNCTION CALLED!');
     document.getElementById('departmentFilter').value = '';
     document.getElementById('cgpaFilter').value = '';
     document.getElementById('batchFilter').value = '';
@@ -806,8 +860,46 @@ window.resetFilters = function() {
 };
 
 window.exportFilteredStudents = async function() {
-    console.log('💾 EXPORT FILTERS FUNCTION CALLED!');
-    showStudentFilterMessage('Export feature coming soon', 'info');
+
+    try {
+        const filters = getCurrentFilters();
+        const queryParams = new URLSearchParams();
+
+        if (filters.department) queryParams.append('department', filters.department);
+        if (filters.minCgpa) queryParams.append('minCgpa', filters.minCgpa);
+        if (filters.maxBacklogs !== null) queryParams.append('maxBacklogs', filters.maxBacklogs);
+        if (filters.batch) queryParams.append('batch', filters.batch);
+
+        const response = await fetch(`http://localhost:8081/api/students/export/filtered?${queryParams}`);
+
+        if (response.ok) {
+            const blob = await response.blob();
+
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'filtered_students.xlsx';
+
+            // Append to body, click, and remove
+            document.body.appendChild(a);
+            a.click();
+
+            // Clean up
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showStudentFilterMessage('Excel file downloaded successfully!', 'success');
+        } else {
+            const errorText = await response.text();
+            console.error('Export failed:', errorText);
+            showStudentFilterMessage('Failed to export students. Please try again.', 'error');
+        }
+    } catch (error) {
+        console.error('Error exporting students:', error);
+        showStudentFilterMessage('Network error while exporting. Please try again.', 'error');
+    }
 };
 
 // Helper functions also need to be global
@@ -828,7 +920,7 @@ window.getCurrentFilters = function() {
 window.displayFilteredStudents = function(students) {
     const studentsGrid = document.getElementById('studentsGrid');
     if (!studentsGrid) {
-        console.error('❌ studentsGrid element not found');
+        console.error('studentsGrid element not found');
         return;
     }
 
@@ -921,12 +1013,10 @@ window.updateResultsSummary = function(count) {
 };
 
 window.loadAllStudents = async function() {
-    console.log('📥 Loading all students...');
     try {
         const response = await fetch('http://localhost:8081/api/students');
         if (response.ok) {
             const students = await response.json();
-            console.log('Students loaded:', students);
             displayFilteredStudents(students);
             updateResultsSummary(students.length);
         } else {
@@ -1006,3 +1096,16 @@ window.showStudentFilterMessage = function(message, type) {
         messageDiv.style.display = 'none';
     }, 5000);
 };
+
+// Auto-refresh event status every minute
+function startEventStatusAutoRefresh() {
+    setInterval(() => {
+        if (currentEvents.length > 0) {
+            currentEvents = currentEvents.map(event => ({
+                ...event,
+                status: classifyEventStatus(event)
+            }));
+            displayEvents(currentEvents);
+        }
+    }, 60000); // Refresh every 60 seconds
+}
