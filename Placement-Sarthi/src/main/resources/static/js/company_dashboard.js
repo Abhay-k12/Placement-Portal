@@ -1109,3 +1109,560 @@ function startEventStatusAutoRefresh() {
         }
     }, 60000); // Refresh every 60 seconds
 }
+
+
+
+// Bulk Operations JavaScript - ENHANCED VERSION
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBulkOperations();
+});
+
+function initializeBulkOperations() {
+    const uploadArea = document.getElementById('uploadArea');
+    const selectFileBtn = document.getElementById('selectFileBtn');
+    const excelUpload = document.getElementById('excelUpload');
+    const sendOALinksBtn = document.getElementById('sendOALinks');
+    const scheduleInterviewsBtn = document.getElementById('scheduleInterviews');
+
+    let uploadedAdmissionNumbers = [];
+
+    // File upload handling
+    if (selectFileBtn && excelUpload) {
+        selectFileBtn.addEventListener('click', function() {
+            excelUpload.click();
+        });
+    }
+
+    if (excelUpload) {
+        excelUpload.addEventListener('change', function(e) {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+    }
+
+    if (uploadArea) {
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function() {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileUpload(e.dataTransfer.files[0]);
+            }
+        });
+    }
+
+    // Send OA Links
+    if (sendOALinksBtn) {
+        sendOALinksBtn.addEventListener('click', function() {
+            if (uploadedAdmissionNumbers.length === 0) {
+                showNotification('Please upload a student list first', 'warning');
+                return;
+            }
+            showOAModal();
+        });
+    }
+
+    // Schedule Interviews
+    if (scheduleInterviewsBtn) {
+        scheduleInterviewsBtn.addEventListener('click', function() {
+            if (uploadedAdmissionNumbers.length === 0) {
+                showNotification('Please upload a student list first', 'warning');
+                return;
+            }
+            showInterviewModal();
+        });
+    }
+
+    function handleFileUpload(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        showLoading('Processing student list...');
+
+        fetch('/api/bulk-operations/extract-admission-numbers', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                uploadedAdmissionNumbers = data.admissionNumbers;
+                showNotification(`Successfully loaded ${data.count} students`, 'success');
+                updateUploadArea(`Loaded ${data.count} students`);
+            } else {
+                showNotification(`${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showNotification('Error processing file', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function updateUploadArea(message) {
+        const uploadText = uploadArea?.querySelector('.upload-text');
+        if (uploadText) {
+            uploadText.innerHTML = `
+                <h4>Student List Ready</h4>
+                <p>${message}</p>
+                <p class="text-sm">Click "Select File" to upload a different file</p>
+            `;
+        }
+    }
+
+    function showOAModal() {
+        const modalHtml = `
+            <div class="modal-overlay active" id="oaModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Send Online Assessment Links</h3>
+                        <button class="modal-close" id="oaModalClose">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="oaForm">
+                            <div class="form-group">
+                                <label> Event Name *</label>
+                                <input type="text" id="oaEventName" required
+                                       placeholder="e.g., Google Online Assessment Round 1">
+                            </div>
+                            <div class="form-group">
+                                <label> OA Link *</label>
+                                <input type="url" id="oaLink" required
+                                       placeholder="https://assessment-platform.com/test/abc123">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="oaDescription" rows="4"
+                                          placeholder="Instructions for the online assessment, topics covered, duration, etc..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label> Start Date & Time *</label>
+                                    <input type="datetime-local" id="oaStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label> End Date & Time *</label>
+                                    <input type="datetime-local" id="oaEndDate" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label> Job Role</label>
+                                    <input type="text" id="oaJobRole" placeholder="e.g., Software Engineer Intern">
+                                </div>
+                                <div class="form-group">
+                                    <label> Expected CGPA</label>
+                                    <input type="number" id="oaExpectedCgpa" step="0.1" min="0" max="10"
+                                           placeholder="7.5">
+                                </div>
+                            </div>
+                            <div class="form-info">
+                                <p><strong> Students to receive OA:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p><small>Each student will be registered in the participation table with this event.</small></p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancelOABtn">Cancel</button>
+                        <button class="btn btn-success" id="confirmOABtn">
+                            <span class="material-symbols-outlined">send</span>
+                            Send OA Links
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Set minimum datetime to current time
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+        setTimeout(() => {
+            const startDateInput = document.getElementById('oaStartDate');
+            const endDateInput = document.getElementById('oaEndDate');
+            if (startDateInput) startDateInput.min = minDateTime;
+            if (endDateInput) endDateInput.min = minDateTime;
+
+            setupOAModal();
+        }, 10);
+    }
+
+    function showInterviewModal() {
+        const modalHtml = `
+            <div class="modal-overlay active" id="interviewModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3> Schedule Interviews</h3>
+                        <button class="modal-close" id="interviewModalClose">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="interviewForm">
+                            <div class="form-group">
+                                <label> Event Name *</label>
+                                <input type="text" id="interviewEventName" required
+                                       placeholder="e.g., Google Technical Interview Round 1">
+                            </div>
+                            <div class="form-group">
+                                <label> Interview Link /  Venue *</label>
+                                <input type="text" id="interviewLink" required
+                                       placeholder="https://meet.google.com/abc-xyz OR Conference Room A, Building 2">
+                            </div>
+                            <div class="form-group">
+                                <label> Description</label>
+                                <textarea id="interviewDescription" rows="4"
+                                          placeholder="Interview instructions, topics to prepare, duration, panel details..."></textarea>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label> Start Date & Time *</label>
+                                    <input type="datetime-local" id="interviewStartDate" required>
+                                </div>
+                                <div class="form-group">
+                                    <label> End Date & Time *</label>
+                                    <input type="datetime-local" id="interviewEndDate" required>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label> Job Role</label>
+                                    <input type="text" id="interviewJobRole" placeholder="e.g., Senior Software Engineer">
+                                </div>
+                                <div class="form-group">
+                                    <label> Expected CGPA</label>
+                                    <input type="number" id="interviewExpectedCgpa" step="0.1" min="0" max="10"
+                                           placeholder="8.0">
+                                </div>
+                            </div>
+                            <div class="form-info">
+                                <p><strong> Students to schedule interviews:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p><small>Each student will be registered in the participation table with this event.</small></p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancelInterviewBtn">Cancel</button>
+                        <button class="btn btn-primary" id="confirmInterviewBtn">
+                            <span class="material-symbols-outlined">schedule</span>
+                            Schedule Interviews
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Set minimum datetime to current time
+        const now = new Date();
+        const minDateTime = now.toISOString().slice(0, 16);
+        setTimeout(() => {
+            const startDateInput = document.getElementById('interviewStartDate');
+            const endDateInput = document.getElementById('interviewEndDate');
+            if (startDateInput) startDateInput.min = minDateTime;
+            if (endDateInput) endDateInput.min = minDateTime;
+
+            setupInterviewModal();
+        }, 10);
+    }
+
+    function setupOAModal() {
+        const modal = document.getElementById('oaModal');
+        const closeBtn = document.getElementById('oaModalClose');
+        const cancelBtn = document.getElementById('cancelOABtn');
+        const confirmBtn = document.getElementById('confirmOABtn');
+
+        if (!modal || !closeBtn || !cancelBtn || !confirmBtn) {
+            console.error('OA Modal elements not found');
+            return;
+        }
+
+        function closeModal() {
+            modal.remove();
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        confirmBtn.addEventListener('click', function() {
+            const form = document.getElementById('oaForm');
+            if (!form) {
+                console.error('OA Form not found');
+                return;
+            }
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const startDate = new Date(document.getElementById('oaStartDate').value);
+            const endDate = new Date(document.getElementById('oaEndDate').value);
+
+            if (endDate <= startDate) {
+                showNotification('❌ End date must be after start date', 'error');
+                return;
+            }
+
+            const requestData = {
+                studentAdmissionNumbers: uploadedAdmissionNumbers,
+                eventName: document.getElementById('oaEventName').value,
+                eventDescription: document.getElementById('oaDescription').value,
+                oaLink: document.getElementById('oaLink').value,
+                startDate: document.getElementById('oaStartDate').value + ':00',
+                endDate: document.getElementById('oaEndDate').value + ':00',
+                jobRole: document.getElementById('oaJobRole').value || null,
+                expectedCgpa: document.getElementById('oaExpectedCgpa').value ?
+                             parseFloat(document.getElementById('oaExpectedCgpa').value) : null
+            };
+
+            sendOALinksRequest(requestData);
+            closeModal();
+        });
+    }
+
+    function setupInterviewModal() {
+        const modal = document.getElementById('interviewModal');
+        const closeBtn = document.getElementById('interviewModalClose');
+        const cancelBtn = document.getElementById('cancelInterviewBtn');
+        const confirmBtn = document.getElementById('confirmInterviewBtn');
+
+        if (!modal || !closeBtn || !cancelBtn || !confirmBtn) {
+            console.error('Interview Modal elements not found');
+            return;
+        }
+
+        function closeModal() {
+            modal.remove();
+        }
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+
+        // Close modal when clicking outside
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        confirmBtn.addEventListener('click', function() {
+            const form = document.getElementById('interviewForm');
+            if (!form) {
+                console.error('Interview Form not found');
+                return;
+            }
+
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const startDate = new Date(document.getElementById('interviewStartDate').value);
+            const endDate = new Date(document.getElementById('interviewEndDate').value);
+
+            if (endDate <= startDate) {
+                showNotification('❌ End date must be after start date', 'error');
+                return;
+            }
+
+            const requestData = {
+                studentAdmissionNumbers: uploadedAdmissionNumbers,
+                eventName: document.getElementById('interviewEventName').value,
+                eventDescription: document.getElementById('interviewDescription').value,
+                oaLink: document.getElementById('interviewLink').value,
+                startDate: document.getElementById('interviewStartDate').value + ':00',
+                endDate: document.getElementById('interviewEndDate').value + ':00',
+                jobRole: document.getElementById('interviewJobRole').value || null,
+                expectedCgpa: document.getElementById('interviewExpectedCgpa').value ?
+                             parseFloat(document.getElementById('interviewExpectedCgpa').value) : null
+            };
+
+            scheduleInterviewsRequest(requestData);
+            closeModal();
+        });
+    }
+
+    function sendOALinksRequest(requestData) {
+        showLoading('📤 Sending OA links and registering students...');
+
+        fetch('/api/bulk-operations/send-oa-links', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Company-Name': getCurrentCompanyName()
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showNotification('✅ ' + data.message, 'success');
+                // Reset uploaded list
+                uploadedAdmissionNumbers = [];
+                resetUploadArea();
+            } else {
+                showNotification('❌ ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showNotification('❌ Error sending OA links', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function scheduleInterviewsRequest(requestData) {
+        showLoading('📅 Scheduling interviews and registering students...');
+
+        fetch('/api/bulk-operations/schedule-interviews', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Company-Name': getCurrentCompanyName()
+            },
+            body: JSON.stringify(requestData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            hideLoading();
+            if (data.success) {
+                showNotification('✅ ' + data.message, 'success');
+                // Reset uploaded list
+                uploadedAdmissionNumbers = [];
+                resetUploadArea();
+            } else {
+                showNotification('❌ ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            hideLoading();
+            showNotification('❌ Error scheduling interviews', 'error');
+            console.error('Error:', error);
+        });
+    }
+
+    function resetUploadArea() {
+        const uploadText = uploadArea?.querySelector('.upload-text');
+        if (uploadText) {
+            uploadText.innerHTML = `
+                <h4>Upload Student List</h4>
+                <p>Drag & drop your Excel file here or click to browse</p>
+                <p class="text-sm">Supported formats: .xlsx, .xls, .csv</p>
+            `;
+        }
+    }
+
+    function getCurrentCompanyName() {
+        try {
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                return user.companyData?.companyName || user.name || 'Default Company';
+            }
+        } catch (error) {
+            console.error('Error getting company name:', error);
+        }
+        return 'Default Company';
+    }
+
+    // Enhanced utility functions
+    function showLoading(message = 'Loading...') {
+        let loadingDiv = document.getElementById('loadingIndicator');
+        if (!loadingDiv) {
+            loadingDiv = document.createElement('div');
+            loadingDiv.id = 'loadingIndicator';
+            loadingDiv.style.cssText = `
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 2rem 3rem;
+                border-radius: 16px;
+                z-index: 9999;
+                font-weight: 600;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                font-size: 1.1rem;
+            `;
+            document.body.appendChild(loadingDiv);
+        }
+
+        loadingDiv.innerHTML = `
+            <div class="loading-spinner"></div>
+            <span>${message}</span>
+        `;
+        loadingDiv.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        const loadingDiv = document.getElementById('loadingIndicator');
+        if (loadingDiv) {
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            border-left: 4px solid ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : type === 'warning' ? '#f59e0b' : '#3b82f6'};
+            background: ${type === 'success' ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' :
+                         type === 'error' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' :
+                         type === 'warning' ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' :
+                         'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'};
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        `;
+        notification.textContent = message;
+
+        document.body.appendChild(notification);
+
+        // Animate in
+        setTimeout(() => {
+            notification.style.transform = 'translateX(0)';
+        }, 100);
+
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+            notification.style.transform = 'translateX(100%)';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 5000);
+    }
+}
