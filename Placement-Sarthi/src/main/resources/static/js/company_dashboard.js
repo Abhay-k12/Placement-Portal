@@ -110,6 +110,8 @@ function showPage(pageId) {
         initializeRecruitmentPage();
     } else if (pageId === 'studentFilter') {
         initializeStudentFilterPage();
+    } else if (pageId === 'messages') {
+        initializeMessagesSection();
     }
 }
 

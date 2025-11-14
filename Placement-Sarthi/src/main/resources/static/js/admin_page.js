@@ -1,8 +1,356 @@
+document.addEventListener('DOMContentLoaded', function() {
+    // Skip authentication check if we're on login page
+    const isLoginPage = window.location.pathname.includes('login_page.html') ||
+                        window.location.pathname.includes('index.html') ||
+                        window.location.pathname === '/';
+
+    if (isLoginPage) {
+        return;
+    }
+
+    const currentUser = sessionStorage.getItem('currentUser');
+
+    if (!currentUser) {
+        alert('Please login first');
+        window.location.href = 'login_page.html';
+        return;
+    }
+
+    const user = JSON.parse(currentUser);
+
+    if (user.role !== 'admin') {
+        alert('Access denied. Admin privileges required.');
+        window.location.href = 'login_page.html';
+        return;
+    }
+
+    // Initialize all admin dashboard functionalities
+    initializeAdminDashboard();
+});
+
 // =============================================
-// 1. AUTHENTICATION & SESSION MANAGEMENT
+// MESSAGES FUNCTIONALITY - MUST BE AT THE TOP
 // =============================================
 
-// Authentication check for admin dashboard
+// Messages functionality for admin
+let currentMessages = [];
+let currentFilter = 'all';
+let selectedMessageId = null;
+
+// Load messages when messages section is shown
+function initializeMessagesSection() {
+    console.log('📨 Initializing messages section...');
+    loadMessages('all');
+}
+
+// Load messages based on filter
+async function loadMessages(filter = 'all') {
+    console.log('📥 Loading messages with filter:', filter);
+
+    currentFilter = filter;
+
+    // Update active tab
+    document.querySelectorAll('.msg-tab').forEach(tab => {
+        tab.classList.remove('active');
+        tab.style.background = 'white';
+        tab.style.color = '#6b7280';
+        tab.style.border = '1px solid #e5e7eb';
+        tab.style.boxShadow = 'none';
+        tab.style.fontWeight = '500';
+    });
+
+    const activeTab = document.querySelector(`.msg-tab[onclick*="${filter}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+        activeTab.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+        activeTab.style.color = 'white';
+        activeTab.style.border = 'none';
+        activeTab.style.boxShadow = '0 2px 8px rgba(59,130,246,0.3)';
+        activeTab.style.fontWeight = '600';
+    }
+
+    // Update title
+    const titles = {
+        'all': 'All Messages',
+        'unread': 'Unread Messages',
+        'read': 'Read Messages',
+        'archived': 'Archived Messages'
+    };
+    document.getElementById('messagesTitle').textContent = titles[filter] || 'Messages';
+
+    try {
+        let url = 'http://localhost:8081/api/messages';
+        if (filter !== 'all') {
+            url = `http://localhost:8081/api/messages/status/${filter}`;
+        }
+
+        console.log('🌐 Fetching from URL:', url);
+
+        const response = await fetch(url);
+        console.log('📡 Response status:', response.status);
+
+        const result = await response.json();
+        console.log('📨 API Response:', result);
+
+        if (result.success) {
+            currentMessages = result.messages || [];
+            console.log('✅ Messages loaded:', currentMessages.length);
+            renderMessages(currentMessages);
+
+            // Update counts if we loaded all messages
+            if (filter === 'all') {
+                updateMessageCounts(result.unreadCount || 0, currentMessages.length);
+            }
+        } else {
+            console.error('❌ API returned error:', result.message);
+            showAdminMessage('Failed to load messages: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('💥 Error loading messages:', error);
+        showAdminMessage('Network error loading messages: ' + error.message, 'error');
+    }
+}
+
+// Render messages list
+function renderMessages(messages) {
+    const container = document.getElementById('messagesList');
+
+    if (!messages || messages.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:3rem; color:#6b7280;">
+                <span class="material-symbols-outlined" style="font-size:3rem; display:block; margin-bottom:1rem;">email</span>
+                <h3>No messages found</h3>
+                <p>There are no ${currentFilter} messages.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = messages.map(message => `
+        <div class="message-item" onclick="openMessage(${message.id})"
+             style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);"
+             onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';"
+             onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
+                <div style="font-weight:600; color:#1f2937; font-size:0.95rem;">${message.senderName}</div>
+                <div style="font-size:0.8rem; color:#6b7280;">${formatMessageDate(message.createdAt)}</div>
+            </div>
+            <div style="font-size:0.875rem; color:#374151; margin-bottom:0.75rem; line-height:1.4;">
+                <strong>${message.subject}</strong>
+            </div>
+            <div style="font-size:0.8rem; color:#6b7280; margin-bottom:0.75rem; line-height:1.4;">
+                ${message.message.length > 100 ? message.message.substring(0, 100) + '...' : message.message}
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="${getStatusStyle(message.status)} padding:0.375rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500;">
+                    ${message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                </span>
+                <span style="color:#6b7280; font-size:0.75rem; font-weight:500;">${message.senderEmail}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Open message details
+async function openMessage(messageId) {
+    selectedMessageId = messageId;
+
+    try {
+        const response = await fetch(`http://localhost:8081/api/messages/${messageId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const message = result.message;
+            document.getElementById('modalTitle').textContent = message.subject;
+            document.getElementById('modalContent').innerHTML = `
+                <div style="margin-bottom:1.5rem;">
+                    <strong>From:</strong> ${message.senderName} (${message.senderEmail})
+                </div>
+                <div style="margin-bottom:1.5rem;">
+                    <strong>Date:</strong> ${formatMessageDate(message.createdAt)}
+                </div>
+                <div style="margin-bottom:1.5rem;">
+                    <strong>Status:</strong> <span style="${getStatusStyle(message.status)} padding:0.25rem 0.5rem; border-radius:4px; font-size:0.75rem; font-weight:500;">
+                        ${message.status.charAt(0).toUpperCase() + message.status.slice(1)}
+                    </span>
+                </div>
+                <div style="border-top:1px solid #e5e7eb; padding-top:1.5rem;">
+                    <strong>Message:</strong>
+                    <div style="margin-top:0.5rem; padding:1rem; background:#f8fafc; border-radius:8px; white-space:pre-wrap;">${message.message}</div>
+                </div>
+            `;
+            document.getElementById('messageModal').style.display = 'flex';
+
+            // Auto-mark as read if unread
+            if (message.status === 'unread') {
+                await updateMessageStatus(messageId, 'read');
+            }
+        } else {
+            showAdminMessage('Failed to load message details', 'error');
+        }
+    } catch (error) {
+        console.error('Error opening message:', error);
+        showAdminMessage('Network error loading message', 'error');
+    }
+}
+
+// Close message modal
+function closeMessage() {
+    document.getElementById('messageModal').style.display = 'none';
+    selectedMessageId = null;
+}
+
+// Update message status
+async function updateMessageStatus(messageId, status) {
+    try {
+        const response = await fetch(`http://localhost:8081/api/messages/${messageId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ status })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            // Reload current messages
+            loadMessages(currentFilter);
+            return true;
+        } else {
+            showAdminMessage('Failed to update message status', 'error');
+            return false;
+        }
+    } catch (error) {
+        console.error('Error updating message status:', error);
+        showAdminMessage('Network error updating message', 'error');
+        return false;
+    }
+}
+
+// Message actions
+async function markAsRead() {
+    if (selectedMessageId && await updateMessageStatus(selectedMessageId, 'read')) {
+        closeMessage();
+        showAdminMessage('Message marked as read', 'success');
+    }
+}
+
+async function archiveMessage() {
+    if (selectedMessageId && await updateMessageStatus(selectedMessageId, 'archived')) {
+        closeMessage();
+        showAdminMessage('Message archived', 'success');
+    }
+}
+
+async function deleteMessage() {
+    if (selectedMessageId && confirm('Are you sure you want to delete this message?')) {
+        try {
+            const response = await fetch(`http://localhost:8081/api/messages/${selectedMessageId}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                closeMessage();
+                loadMessages(currentFilter);
+                showAdminMessage('Message deleted successfully', 'success');
+            } else {
+                showAdminMessage('Failed to delete message', 'error');
+            }
+        } catch (error) {
+            console.error('Error deleting message:', error);
+            showAdminMessage('Network error deleting message', 'error');
+        }
+    }
+}
+
+function replyToMessage() {
+    if (selectedMessageId) {
+        const message = currentMessages.find(m => m.id === selectedMessageId);
+        if (message) {
+            const emailUrl = `mailto:${message.senderEmail}?subject=Re: ${message.subject}`;
+            window.open(emailUrl, '_blank');
+        }
+    }
+}
+
+// Search messages
+async function searchMessages(query) {
+    if (!query.trim()) {
+        loadMessages(currentFilter);
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:8081/api/messages/search?query=${encodeURIComponent(query)}`);
+        const result = await response.json();
+
+        if (result.success) {
+            renderMessages(result.messages);
+        } else {
+            showAdminMessage('Search failed', 'error');
+        }
+    } catch (error) {
+        console.error('Error searching messages:', error);
+        showAdminMessage('Network error during search', 'error');
+    }
+}
+
+// Sort messages (placeholder - you can implement sorting logic)
+function sortMessages(criteria) {
+    // Implement sorting based on criteria
+    console.log('Sorting by:', criteria);
+}
+
+// Update message counts
+function updateMessageCounts(unreadCount, totalCount) {
+    document.getElementById('unreadCount').textContent = unreadCount;
+    document.getElementById('allCount').textContent = totalCount;
+
+    // You might want to fetch read and archived counts separately
+    // For now, we'll set placeholders
+    document.getElementById('readCount').textContent = '0';
+    document.getElementById('archivedCount').textContent = '0';
+}
+
+// Helper functions
+function formatMessageDate(dateString) {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now - date);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+        return 'Yesterday';
+    } else if (diffDays < 7) {
+        return `${diffDays} days ago`;
+    } else {
+        return date.toLocaleDateString();
+    }
+}
+
+function getStatusStyle(status) {
+    const styles = {
+        'unread': 'background:#fef3c7; color:#d97706;',
+        'read': 'background:#dcfce7; color:#16a34a;',
+        'archived': 'background:#e5e7eb; color:#6b7280;'
+    };
+    return styles[status] || styles.read;
+}
+
+function showAdminMessage(message, type) {
+    // Simple alert for now - you can implement a better notification system
+    alert(`${type.toUpperCase()}: ${message}`);
+}
+
+// Compose new message (placeholder)
+function composeMessage() {
+    alert('Compose message functionality would open here');
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Skip authentication check if we're on login page
     const isLoginPage = window.location.pathname.includes('login_page.html') ||
@@ -82,6 +430,16 @@ function showPage(pageId) {
     // Show selected page
     if (pages[pageId]) {
         pages[pageId].style.display = 'block';
+
+        // Initialize specific sections when shown
+        if (pageId === 'messages') {
+            initializeMessagesSection();
+        } else if (pageId === 'events') {
+            initializeEventsSection();
+        } else if (pageId === 'profile') {
+            loadProfileSection();
+        }
+        // Add other sections as needed
     }
 }
 
@@ -89,10 +447,6 @@ function setupPageNavigation() {
     // Initialize page
     showPage('dashboard');
 }
-
-// =============================================
-// 3. ADMIN PROFILE MANAGEMENT
-// =============================================
 
 // Profile API functions
 async function fetchAdminProfile(adminId) {
@@ -848,9 +1202,6 @@ function downloadTemplate() {
     }, 1500);
 }
 
-// =============================================
-// 5. EVENT MANAGEMENT
-// =============================================
 
 // Event Tab Management
 async function switchEventTab(button, tabType) {
@@ -1188,9 +1539,6 @@ function filterEventsByCompany(company) {
     });
 }
 
-// =============================================
-// 6. COMPANY MANAGEMENT
-// =============================================
 
 // Company Tab Management
 function switchCompanyTab(button, tabType) {
@@ -1504,9 +1852,6 @@ function viewResults(driveId) {
     alert('View results for drive: ' + driveId);
 }
 
-// =============================================
-// 7. UTILITY FUNCTIONS
-// =============================================
 
 // Message Display
 function showMessage(message, type = 'info') {
@@ -1645,9 +1990,6 @@ function initializeBulkUploadTab() {
     setupBulkUpload();
 }
 
-// =============================================
-// 8. INITIALIZATION
-// =============================================
 
 // Initialize bulk upload when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {

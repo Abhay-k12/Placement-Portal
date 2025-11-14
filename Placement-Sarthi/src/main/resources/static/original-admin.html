@@ -914,96 +914,71 @@
             <h1>Messages & Communications</h1>
 
             <div style="display:flex; gap:1rem; margin:2rem 0;">
-                <input type="text" placeholder="Search messages..." style="flex:1; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; outline:none;">
-                <select onchange="sortMessages(this.value)" style="padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; cursor:pointer;">
+                <input type="text" id="messageSearch" placeholder="Search messages..."
+                       style="flex:1; padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; outline:none;"
+                       oninput="searchMessages(this.value)">
+                <select id="messageSort" onchange="sortMessages(this.value)"
+                        style="padding:0.75rem; border:1px solid #d1d5db; border-radius:8px; cursor:pointer;">
                     <option value="all">All</option>
                     <option value="unread">Unread</option>
-                    <option value="students">Students</option>
-                    <option value="companies">Companies</option>
+                    <option value="read">Read</option>
+                    <option value="archived">Archived</option>
                 </select>
-                <button onclick="composeMessage()" style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.4)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(59,130,246,0.3)';">
+                <button onclick="composeMessage()"
+                        style="background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.3s ease;"
+                        onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(59,130,246,0.4)';"
+                        onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 8px rgba(59,130,246,0.3)';">
                     New Message
                 </button>
             </div>
 
             <div style="display:grid; grid-template-columns:280px 1fr; gap:1.5rem; height:calc(100vh - 200px);">
 
+                <!-- Inbox Sidebar -->
                 <div style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius:12px; padding:1.5rem; box-shadow:0 4px 12px rgba(0,0,0,0.08); height:fit-content; border:1px solid #e2e8f0;">
                     <h3 style="margin:0 0 1.5rem 0; color:#1e293b; font-weight:700; font-size:1.125rem;">Inbox</h3>
                     <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                        <button class="msg-tab active" onclick="switchTab(this, 'all')" style="padding:1rem; text-align:left; border:none; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius:8px; cursor:pointer; color:white; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.3s ease;">
-                            All Messages (12)
+                        <button class="msg-tab active" onclick="loadMessages('all')"
+                                style="padding:1rem; text-align:left; border:none; background:linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius:8px; cursor:pointer; color:white; font-weight:600; box-shadow:0 2px 8px rgba(59,130,246,0.3); transition:all 0.3s ease;">
+                            All Messages (<span id="allCount">0</span>)
                         </button>
-                        <button class="msg-tab" onclick="switchTab(this, 'unread')" style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
-                            Unread (3)
+                        <button class="msg-tab" onclick="loadMessages('unread')"
+                                style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;"
+                                onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';"
+                                onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                            Unread (<span id="unreadCount">0</span>)
                         </button>
-                        <button class="msg-tab" onclick="switchTab(this, 'sent')" style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
-                            Sent
+                        <button class="msg-tab" onclick="loadMessages('read')"
+                                style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;"
+                                onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';"
+                                onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                            Read (<span id="readCount">0</span>)
                         </button>
-                        <button class="msg-tab" onclick="switchTab(this, 'archived')" style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;" onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
-                            Archived
+                        <button class="msg-tab" onclick="loadMessages('archived')"
+                                style="padding:1rem; text-align:left; border:none; background:white; border-radius:8px; cursor:pointer; color:#6b7280; font-weight:500; transition:all 0.3s ease; border:1px solid #e5e7eb;"
+                                onmouseover="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1';"
+                                onmouseout="this.style.background='white'; this.style.borderColor='#e5e7eb';">
+                            Archived (<span id="archivedCount">0</span>)
                         </button>
                     </div>
                 </div>
 
+                <!-- Messages List -->
                 <div style="background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.08); height:100%; display:flex; flex-direction:column; border:1px solid #e2e8f0;">
                     <div style="padding:1.5rem; border-bottom:2px solid #e2e8f0; flex-shrink:0; background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);">
-                        <h3 style="margin:0; color:#1e293b; font-weight:700; font-size:1.125rem;">Messages</h3>
+                        <h3 style="margin:0; color:#1e293b; font-weight:700; font-size:1.125rem;" id="messagesTitle">All Messages</h3>
                     </div>
-                    <div style="flex:1; overflow-y:auto; min-height:0; padding:0.5rem;">
-
-                        <div class="message-item" onclick="openMessage('Rahul Sharma', 'Internship Query', 'Student')" style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
-                            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
-                                <div style="font-weight:600; color:#1f2937; font-size:0.95rem;">Rahul Sharma</div>
-                                <div style="font-size:0.8rem; color:#6b7280;">2 hours ago</div>
-                            </div>
-                            <div style="font-size:0.875rem; color:#374151; margin-bottom:0.75rem; line-height:1.4;">Internship Query</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="background:#fef3c7; color:#d97706; padding:0.375rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500;">Unread</span>
-                                <span style="color:#6b7280; font-size:0.75rem; font-weight:500;">Student</span>
-                            </div>
+                    <div id="messagesList" style="flex:1; overflow-y:auto; min-height:0; padding:0.5rem;">
+                        <!-- Messages will be loaded here dynamically -->
+                        <div style="text-align:center; padding:3rem; color:#6b7280;">
+                            <span class="material-symbols-outlined" style="font-size:3rem; display:block; margin-bottom:1rem;">email</span>
+                            <p>Loading messages...</p>
                         </div>
-
-                        <div class="message-item" onclick="openMessage('TCS HR', 'Drive Details', 'Company')" style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
-                            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
-                                <div style="font-weight:600; color:#1f2937; font-size:0.95rem;">TCS HR</div>
-                                <div style="font-size:0.8rem; color:#6b7280;">1 day ago</div>
-                            </div>
-                            <div style="font-size:0.875rem; color:#374151; margin-bottom:0.75rem; line-height:1.4;">Drive Details Updated</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="background:#dcfce7; color:#16a34a; padding:0.375rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500;">Read</span>
-                                <span style="color:#6b7280; font-size:0.75rem; font-weight:500;">Company</span>
-                            </div>
-                        </div>
-
-                        <div class="message-item" onclick="openMessage('Priya Patel', 'Form Submission', 'Student')" style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
-                            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
-                                <div style="font-weight:600; color:#1f2937; font-size:0.95rem;">Priya Patel</div>
-                                <div style="font-size:0.8rem; color:#6b7280;">2 days ago</div>
-                            </div>
-                            <div style="font-size:0.875rem; color:#374151; margin-bottom:0.75rem; line-height:1.4;">Placement Form Submission</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="background:#fee2e2; color:#dc2626; padding:0.375rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500;">Pending</span>
-                                <span style="color:#6b7280; font-size:0.75rem; font-weight:500;">Student</span>
-                            </div>
-                        </div>
-
-                        <div class="message-item" onclick="openMessage('System', 'Portal Update', 'System')" style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);" onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';" onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
-                            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:0.75rem;">
-                                <div style="font-weight:600; color:#1f2937; font-size:0.95rem;">System</div>
-                                <div style="font-size:0.8rem; color:#6b7280;">3 days ago</div>
-                            </div>
-                            <div style="font-size:0.875rem; color:#374151; margin-bottom:0.75rem; line-height:1.4;">Portal Update Notification</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <span style="background:#dcfce7; color:#16a34a; padding:0.375rem 0.75rem; border-radius:6px; font-size:0.75rem; font-weight:500;">Read</span>
-                                <span style="color:#6b7280; font-size:0.75rem; font-weight:500;">System</span>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
 
+            <!-- Message Modal -->
             <div id="messageModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; align-items:center; justify-content:center;">
                 <div style="background:white; border-radius:12px; padding:2rem; max-width:600px; width:90%; max-height:80vh; overflow-y:auto;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
@@ -1012,14 +987,25 @@
                     </div>
                     <div id="modalContent" style="line-height:1.6; color:#374151;"></div>
                     <div style="display:flex; gap:1rem; margin-top:3rem; padding-top:2rem; border-top:1px solid #e5e7eb;">
-                        <button onclick="replyMessage()" style="background:#3b82f6; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(59,130,246,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(59,130,246,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59,130,246,0.2)';">
+                        <button onclick="replyToMessage()" style="background:#3b82f6; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(59,130,246,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(59,130,246,0.3)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(59,130,246,0.2)';">
                             Reply
                         </button>
-                        <button onclick="markAsRead()" style="background:#10b981; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(16,185,129,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(16,185,129,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(16,185,129,0.2)';">
+                        <button onclick="markAsRead()" style="background:#10b981; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(16,185,129,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(16,185,129,0.3)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(16,185,129,0.2)';">
                             Mark Read
                         </button>
-                        <button onclick="archiveMessage()" style="background:#6b7280; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(107,114,128,0.2);" onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(107,114,128,0.3)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(107,114,128,0.2)';">
+                        <button onclick="archiveMessage()" style="background:#6b7280; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(107,114,128,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(107,114,128,0.3)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(107,114,128,0.2)';">
                             Archive
+                        </button>
+                        <button onclick="deleteMessage()" style="background:#ef4444; color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; cursor:pointer; font-weight:500; transition:all 0.2s ease; box-shadow:0 2px 4px rgba(239,68,68,0.2);"
+                                onmouseover="this.style.transform='translateY(-1px)'; this.style.boxShadow='0 4px 8px rgba(239,68,68,0.3)';"
+                                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 4px rgba(239,68,68,0.2)';">
+                            Delete
                         </button>
                     </div>
                 </div>

@@ -1,4 +1,3 @@
-// src/main/java/com/PlacementPortal/Placement/Sarthi/entity/Participation.java
 package com.PlacementPortal.Placement.Sarthi.entity;
 
 import jakarta.persistence.*;
