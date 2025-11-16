@@ -29,23 +29,19 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =============================================
-// MESSAGES FUNCTIONALITY - MUST BE AT THE TOP
+// 1. MESSAGES FUNCTIONALITY
 // =============================================
-
-// Messages functionality for admin
 let currentMessages = [];
 let currentFilter = 'all';
 let selectedMessageId = null;
 
 // Load messages when messages section is shown
 function initializeMessagesSection() {
-    console.log('📨 Initializing messages section...');
     loadMessages('all');
 }
 
 // Load messages based on filter
 async function loadMessages(filter = 'all') {
-    console.log('📥 Loading messages with filter:', filter);
 
     currentFilter = filter;
 
@@ -84,17 +80,12 @@ async function loadMessages(filter = 'all') {
             url = `http://localhost:8081/api/messages/status/${filter}`;
         }
 
-        console.log('🌐 Fetching from URL:', url);
-
         const response = await fetch(url);
-        console.log('📡 Response status:', response.status);
 
         const result = await response.json();
-        console.log('📨 API Response:', result);
 
         if (result.success) {
             currentMessages = result.messages || [];
-            console.log('✅ Messages loaded:', currentMessages.length);
             renderMessages(currentMessages);
 
             // Update counts if we loaded all messages
@@ -102,11 +93,11 @@ async function loadMessages(filter = 'all') {
                 updateMessageCounts(result.unreadCount || 0, currentMessages.length);
             }
         } else {
-            console.error('❌ API returned error:', result.message);
+            console.error('API returned error:', result.message);
             showAdminMessage('Failed to load messages: ' + result.message, 'error');
         }
     } catch (error) {
-        console.error('💥 Error loading messages:', error);
+        console.error('Error loading messages:', error);
         showAdminMessage('Network error loading messages: ' + error.message, 'error');
     }
 }
@@ -1989,7 +1980,6 @@ function handleDownloadTemplate() {
 function initializeBulkUploadTab() {
     setupBulkUpload();
 }
-
 
 // Initialize bulk upload when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {

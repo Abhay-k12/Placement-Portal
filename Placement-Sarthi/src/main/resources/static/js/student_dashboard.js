@@ -7,7 +7,6 @@ let studentParticipations = [];
 
 // Initialize the dashboard when page loads
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Dashboard initialized');
     showSection('dashboard');
     loadStudentProfile();
 });
@@ -20,8 +19,6 @@ document.getElementById('mobile-menu-btn').addEventListener('click', function() 
 
 // Section navigation
 function showSection(sectionId) {
-    console.log('📱 Switching to section:', sectionId);
-
     // Hide all sections
     document.querySelectorAll('.page-content').forEach(section => {
         section.style.display = 'none';
@@ -54,7 +51,6 @@ function showSection(sectionId) {
     if (sectionId === 'profile') {
         loadProfileSection();
     } else if (sectionId === 'events') {
-        console.log('🎯 Loading events section...');
         initializeEventsSection();
     } else if (sectionId === 'records') {
         loadRecordsSection();
@@ -65,8 +61,6 @@ function showSection(sectionId) {
 
 // Initialize events section
 async function initializeEventsSection() {
-    console.log('🎯 initializeEventsSection() called');
-
     // Show loading state immediately
     showEventsLoading();
 
@@ -81,15 +75,13 @@ async function initializeEventsSection() {
         showEventsForCurrentTab();
 
     } catch (error) {
-        console.error('❌ Error initializing events:', error);
+        console.error(' Error initializing events:', error);
         showEventsError('Failed to load events');
     }
 }
 
 // Load events from API
 async function loadEventsFromAPI() {
-    console.log('📡 Loading events from API...');
-
     try {
         const response = await fetch('http://localhost:8081/api/events');
 
@@ -98,14 +90,9 @@ async function loadEventsFromAPI() {
         }
 
         allEvents = await response.json();
-        console.log('✅ Events loaded successfully:', allEvents.length, 'events found');
-
-        if (allEvents.length === 0) {
-            console.log('ℹ️ No events found in database');
-        }
 
     } catch (error) {
-        console.error('❌ Failed to load events:', error);
+        console.error(' Failed to load events:', error);
         allEvents = [];
         throw error;
     }
@@ -123,21 +110,16 @@ async function loadParticipations() {
         const response = await fetch(`http://localhost:8081/api/participations/student/${currentUser.id}`);
         if (response.ok) {
             studentParticipations = await response.json();
-            console.log('✅ Participations loaded:', studentParticipations.length, 'participations found');
         } else {
             studentParticipations = [];
-            console.log('ℹ️ No participations found');
         }
     } catch (error) {
-        console.log('ℹ️ Could not load participations:', error);
         studentParticipations = [];
     }
 }
 
 // Show events for current tab
 function showEventsForCurrentTab() {
-    console.log('📊 Showing events for tab:', currentEventsTab);
-
     let filteredEvents = [];
 
     switch(currentEventsTab) {
@@ -154,7 +136,6 @@ function showEventsForCurrentTab() {
             filteredEvents = allEvents;
     }
 
-    console.log('📋 Filtered events:', filteredEvents.length);
     renderEventCards(filteredEvents);
 }
 
@@ -188,11 +169,9 @@ function filterPastEvents() {
 function renderEventCards(events) {
     const container = document.getElementById('dynamicEventCards');
     if (!container) {
-        console.error('❌ Event cards container not found!');
+        console.error(' Event cards container not found!');
         return;
     }
-
-    console.log('🎨 Rendering', events.length, 'event cards');
 
     if (events.length === 0) {
         container.innerHTML = createNoEventsMessage();
@@ -378,8 +357,6 @@ function createNoEventsMessage() {
 
 // Event tab switching
 function switchEventTab(button, tabType) {
-    console.log('🔀 Switching to tab:', tabType);
-
     // Update active tab
     document.querySelectorAll('.event-tab').forEach(tab => {
         tab.classList.remove('active');
@@ -452,7 +429,6 @@ function viewParticipationDetails(eventId) {
 async function loadStudentProfile() {
     const currentUser = sessionStorage.getItem('currentUser');
     if (!currentUser) {
-        console.log('No user logged in');
         return;
     }
 
@@ -460,7 +436,6 @@ async function loadStudentProfile() {
 
     // Check if user is student
     if (user.role !== 'student') {
-        console.log('User is not a student');
         return;
     }
 
@@ -471,14 +446,11 @@ async function loadStudentProfile() {
         // If backend fetch fails, use stored data
         if (!studentData) {
             studentData = user.studentData;
-            console.log('Using stored student data');
         } else {
             // Update session storage with fresh data
             user.studentData = studentData;
             sessionStorage.setItem('currentUser', JSON.stringify(user));
         }
-
-        console.log('Loading student profile:', studentData);
 
         // Update profile information in sidebar
         updateStudentProfileElement('.admin-name', studentData.studentFirstName || 'Student');
@@ -625,8 +597,6 @@ function updateResumeSection(studentData) {
 
 // Toggle between view and edit modes
 function toggleEditMode() {
-    console.log('Toggle Edit Mode called');
-
     isEditMode = !isEditMode;
     const profileView = document.getElementById('profileView');
     const profileEdit = document.getElementById('profileEdit');
@@ -644,8 +614,6 @@ function toggleEditMode() {
 
 // Populate edit form with current data
 function populateEditForm() {
-    console.log('Populating edit form with:', currentStudentData);
-
     if (!currentStudentData) {
         console.error('No student data available');
         showMessage('Error: No student data found. Please refresh the page.', 'error');
@@ -677,7 +645,6 @@ function populateEditForm() {
         document.getElementById('editTwelfthPercent').value = currentStudentData.twelfthPercentage || '';
         document.getElementById('editBacklogs').value = currentStudentData.backLogsCount || 0;
 
-        console.log('Form populated successfully');
     } catch (error) {
         console.error('Error populating form:', error);
         showMessage('Error loading form data. Please try again.', 'error');
@@ -975,7 +942,6 @@ function hideMessage() {
 // Debug function
 function checkDataLoading() {
     const currentUser = sessionStorage.getItem('currentUser');
-    console.log('Current User in session:', currentUser);
 
     if (currentUser) {
         const user = JSON.parse(currentUser);
@@ -1041,7 +1007,7 @@ async function loadRecordsSection() {
     console.log('Loading records section');
 }
 
-// Add CSS animation
+// Adding CSS animation
 const style = document.createElement('style');
 style.textContent = `
     @keyframes spin {
@@ -1087,7 +1053,6 @@ function filterEventsByCompany(company) {
 
 // Event Tab Switching
 function switchEventTab(button, tabType) {
-    console.log('🔀 Switching to tab:', tabType);
 
     // Update active tab styling
     document.querySelectorAll('.event-tab').forEach(tab => {
@@ -1108,8 +1073,6 @@ function globalSearch(event) {
     if (!query) {
         return;
     }
-
-    console.log('🔍 Global search for:', query);
 
     // Show events section and search there
     showSection('events');

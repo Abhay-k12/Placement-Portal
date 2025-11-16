@@ -123,7 +123,7 @@ public class StudentServiceImpl implements StudentService {
             String[] headers = {
                     "Admission Number", "First Name", "Last Name",
                     "Department", "Batch", "CGPA", "Backlogs",
-                    "Email", "Mobile", "Course", "University Roll No"
+                    "Email", "Mobile", "Course", "University Roll No", "Resume Link"
             };
 
             for (int i = 0; i < headers.length; i++) {
@@ -147,6 +147,7 @@ public class StudentServiceImpl implements StudentService {
                 row.createCell(8).setCellValue(student.getMobileNo() != null ? student.getMobileNo() : "");
                 row.createCell(9).setCellValue(student.getCourse() != null ? student.getCourse() : "");
                 row.createCell(10).setCellValue(student.getStudentUniversityRollNo() != null ? student.getStudentUniversityRollNo() : "");
+                row.createCell(11).setCellValue(student.getResumeLink() !=null ? student.getResumeLink() : "");
             }
 
             // Auto-size columns

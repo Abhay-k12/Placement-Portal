@@ -70,8 +70,6 @@ function getPageIdFromNavItem(navText) {
 
 // SINGLE Page navigation function
 function showPage(pageId) {
-    console.log('Showing page:', pageId);
-
     // Hide all pages
     document.querySelectorAll('.page-content').forEach(page => {
         page.style.display = 'none';
@@ -199,7 +197,6 @@ async function loadCompanyProfile() {
 
     // Check if user is company
     if (user.role !== 'company') {
-        console.log('User is not a company');
         return;
     }
 
@@ -801,19 +798,12 @@ function showRecruitmentMessage(message, type) {
 
 
 function initializeStudentFilterPage() {
-    console.log('🚀 STUDENT FILTER PAGE INITIALIZED');
 
     // Check if all required elements exist
     const applyFiltersBtn = document.getElementById('applyFilters');
     const resetFiltersBtn = document.getElementById('resetFilters');
     const exportResultsBtn = document.getElementById('exportResults');
     const studentsGrid = document.getElementById('studentsGrid');
-
-    console.log('📋 Element check:');
-    console.log('- applyFiltersBtn:', applyFiltersBtn);
-    console.log('- resetFiltersBtn:', resetFiltersBtn);
-    console.log('- exportResultsBtn:', exportResultsBtn);
-    console.log('- studentsGrid:', studentsGrid);
 
     // Load students immediately
     loadAllStudents();
@@ -1420,7 +1410,7 @@ function initializeBulkOperations() {
             const endDate = new Date(document.getElementById('oaEndDate').value);
 
             if (endDate <= startDate) {
-                showNotification('❌ End date must be after start date', 'error');
+                showNotification('End date must be after start date', 'error');
                 return;
             }
 
@@ -1482,7 +1472,7 @@ function initializeBulkOperations() {
             const endDate = new Date(document.getElementById('interviewEndDate').value);
 
             if (endDate <= startDate) {
-                showNotification('❌ End date must be after start date', 'error');
+                showNotification('End date must be after start date', 'error');
                 return;
             }
 
@@ -1504,7 +1494,7 @@ function initializeBulkOperations() {
     }
 
     function sendOALinksRequest(requestData) {
-        showLoading('📤 Sending OA links and registering students...');
+        showLoading('Sending OA links and registering students...');
 
         fetch('/api/bulk-operations/send-oa-links', {
             method: 'POST',
@@ -1518,23 +1508,23 @@ function initializeBulkOperations() {
         .then(data => {
             hideLoading();
             if (data.success) {
-                showNotification('✅ ' + data.message, 'success');
+                showNotification(data.message, 'success');
                 // Reset uploaded list
                 uploadedAdmissionNumbers = [];
                 resetUploadArea();
             } else {
-                showNotification('❌ ' + data.message, 'error');
+                showNotification(data.message, 'error');
             }
         })
         .catch(error => {
             hideLoading();
-            showNotification('❌ Error sending OA links', 'error');
+            showNotification(' Error sending OA links', 'error');
             console.error('Error:', error);
         });
     }
 
     function scheduleInterviewsRequest(requestData) {
-        showLoading('📅 Scheduling interviews and registering students...');
+        showLoading(' Scheduling interviews and registering students...');
 
         fetch('/api/bulk-operations/schedule-interviews', {
             method: 'POST',
@@ -1548,17 +1538,17 @@ function initializeBulkOperations() {
         .then(data => {
             hideLoading();
             if (data.success) {
-                showNotification('✅ ' + data.message, 'success');
+                showNotification( data.message, 'success');
                 // Reset uploaded list
                 uploadedAdmissionNumbers = [];
                 resetUploadArea();
             } else {
-                showNotification('❌ ' + data.message, 'error');
+                showNotification( + data.message, 'error');
             }
         })
         .catch(error => {
             hideLoading();
-            showNotification('❌ Error scheduling interviews', 'error');
+            showNotification(' Error scheduling interviews', 'error');
             console.error('Error:', error);
         });
     }

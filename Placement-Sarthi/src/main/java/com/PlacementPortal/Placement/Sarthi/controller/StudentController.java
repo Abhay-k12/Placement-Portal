@@ -76,7 +76,6 @@ public class StudentController {
         }
     }
 
-    // NEW: Template download endpoint
     @GetMapping("/download-template")
     public ResponseEntity<byte[]> downloadStudentTemplate() {
         try {
@@ -306,8 +305,6 @@ public class StudentController {
             ));
         }
     }
-
-    // Add these endpoints to your StudentController.java
 
     @GetMapping("/filter")
     public ResponseEntity<List<Student>> filterStudents(
