@@ -470,25 +470,6 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Resume Section -->
-                <div class="resume-section">
-                    <h3>Resume & Documents</h3>
-                    <div class="document-item">
-                        <span class="material-symbols-outlined">description</span>
-                        <div class="document-info">
-                            <span class="document-name" id="resumeFileName">No resume uploaded</span>
-                            <span class="document-status" id="resumeStatus">Not uploaded</span>
-                        </div>
-                        <button class="download-btn" id="downloadResumeBtn" style="display: none;">
-                            <span class="material-symbols-outlined">download</span>
-                        </button>
-                    </div>
-                    <button class="upload-resume-btn" onclick="uploadResume()">
-                        <span class="material-symbols-outlined">upload</span>
-                        Upload Resume
-                    </button>
-                </div>
             </div>
 
             <!-- Edit Profile Form -->
@@ -671,85 +652,149 @@
         </main>
 
         <main id="records" class="page-content" style="display: none;">
-            <h1>Past Records</h1>
-            
+            <h1>Application History</h1>
+
             <div class="charts-section">
                 <h2 class="section-heading">
                     <span class="material-symbols-outlined">history</span>
-                    Application History
+                    My Event Participations
                 </h2>
-                
+
                 <div class="chart-card">
-                    <table class="records-table">
+                    <div class="records-controls">
+                        <div class="search-box">
+                            <span class="material-symbols-outlined">search</span>
+                            <input type="text" id="recordsSearch" placeholder="Search by company or role..." onkeyup="searchRecords()">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="statusFilter" onchange="filterRecords()">
+                                <option value="all">All Status</option>
+                                <option value="REGISTERED">Registered</option>
+                                <option value="SELECTED">Selected</option>
+                                <option value="ATTEMPTED">Attempted</option>
+                                <option value="COMPLETED">Completed</option>
+                                <option value="REJECTED">Rejected</option>
+                                <option value="ABSENT">Absent</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="records-loading" id="recordsLoading">
+                        <span class="material-symbols-outlined spin">refresh</span>
+                        <p>Loading your applications...</p>
+                    </div>
+
+                    <div class="records-error" id="recordsError" style="display: none;">
+                        <span class="material-symbols-outlined">error</span>
+                        <p id="errorMessage">Failed to load records</p>
+                        <button onclick="loadRecordsSection()" class="retry-btn">Try Again</button>
+                    </div>
+
+                    <table class="records-table" id="recordsTable" style="display: none;">
                         <thead>
-                            <tr>
-                                <th>Company</th>
-                                <th>Role</th>
-                                <th>Date</th>
-                                <th>Status</th>
-                                <th>Remarks</th>
-                            </tr>
+                        <tr>
+                            <th>Company</th>
+                            <th>Role</th>
+                            <th>Event Date</th>
+                            <th>Registration Date</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Amazon</td>
-                                <td>SDE-1</td>
-                                <td>15 Sep 2025</td>
-                                <td><span class="status-badge status-selected">Selected</span></td>
-                                <td>Offer: ₹16 LPA</td>
-                            </tr>
-                            <tr>
-                                <td>Microsoft</td>
-                                <td>Software Engineer</td>
-                                <td>10 Sep 2025</td>
-                                <td><span class="status-badge status-pending">Interview</span></td>
-                                <td>Technical round cleared</td>
-                            </tr>
-                            <tr>
-                                <td>Google</td>
-                                <td>SDE Intern</td>
-                                <td>5 Sep 2025</td>
-                                <td><span class="status-badge status-pending">Shortlisted</span></td>
-                                <td>Aptitude cleared</td>
-                            </tr>
-                            <tr>
-                                <td>TCS</td>
-                                <td>Software Analyst</td>
-                                <td>1 Sep 2025</td>
-                                <td><span class="status-badge status-rejected">Rejected</span></td>
-                                <td>Technical round</td>
-                            </tr>
+                        <tbody id="recordsTableBody">
+                        <!-- Records will be populated dynamically -->
                         </tbody>
                     </table>
+
+                    <div class="no-records" id="noRecords" style="display: none;">
+                        <span class="material-symbols-outlined">event_busy</span>
+                        <h3>No Applications Found</h3>
+                        <p>You haven't registered for any events yet.</p>
+                        <button onclick="showSection('events')" class="browse-events-btn">Browse Events</button>
+                    </div>
                 </div>
             </div>
         </main>
 
         <main id="resume" class="page-content" style="display: none;">
             <h1>Resume Management</h1>
-            
+
             <div class="charts-section">
                 <h2 class="section-heading">
                     <span class="material-symbols-outlined">description</span>
-                    Upload & Manage Resume
+                    Manage Your Resume (Google Drive)
                 </h2>
-                
+
+                <!-- Success/Error Messages -->
+                <div id="resumeMessage" class="message" style="display: none;"></div>
+
                 <div class="chart-card">
-                    <div class="resume-upload-area">
-                        <div class="upload-icon">
-                            <span class="material-symbols-outlined">cloud_upload</span>
+                    <!-- Current Resume Status -->
+                    <div class="resume-status-section">
+                        <h3>Current Resume Status</h3>
+                        <div class="resume-info" id="resumeInfo">
+                            <div class="no-resume" id="noResume">
+                                <span class="material-symbols-outlined">description</span>
+                                <p>No resume link added yet</p>
+                                <p class="hint">Add your Google Drive resume link to get started</p>
+                            </div>
+                            <div class="resume-details" id="resumeDetails" style="display: none;">
+                                <div class="resume-preview">
+                                    <span class="material-symbols-outlined">description</span>
+                                    <div class="resume-meta">
+                                        <h4>Your Resume</h4>
+                                        <p class="resume-type">Google Drive Link</p>
+                                        <p class="resume-link" id="currentResumeLink">Loading...</p>
+                                    </div>
+                                </div>
+                                <div class="resume-actions">
+                                    <button class="action-btn view-btn" onclick="viewResume()">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                        View Resume
+                                    </button>
+                                    <button class="action-btn edit-btn" onclick="showResumeForm()">
+                                        <span class="material-symbols-outlined">edit</span>
+                                        Update Link
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                        <h3>Upload Your Resume</h3>
-                        <p>Supported format: PDF only. Maximum file size: 5MB.</p>
-                        <input type="file" id="resumeUpload" accept=".pdf" style="display: none;">
-                        <div class="resume-actions">
-                            <button class="event-action-btn" onclick="document.getElementById('resumeUpload').click()">
-                                Select File
+                    </div>
+
+                    <!-- Add/Update Resume Link Form -->
+                    <div class="resume-form-section" id="resumeFormSection" style="display: none;">
+                        <h3>Add/Update Resume Link</h3>
+                        <div class="form-group">
+                            <label for="resumeDriveLink">Google Drive Resume Public Link</label>
+                            <input type="url" id="resumeDriveLink" class="form-input"
+                                   placeholder="https://drive.google.com/file/d/..."
+                                   style="width: 100%; padding: 10px; margin-bottom: 10px;">
+                            <p class="form-hint">
+                                 How to get your Google Drive link:
+                            <ol>
+                                <li>Upload your resume to Google Drive</li>
+                                <li>Right-click the file → "Share"</li>
+                                <li>Change sharing to "Anyone with the link can view"</li>
+                                <li>Copy the link and paste it here</li>
+                            </ol>
+                            </p>
+                        </div>
+                        <div class="form-actions">
+                            <button class="action-btn cancel-btn" onclick="hideResumeForm()">
+                                Cancel
                             </button>
-                            <button class="event-action-btn edit">
-                                Download Current
+                            <button class="action-btn save-btn" onclick="saveResumeLink()">
+                                Save Resume Link
                             </button>
                         </div>
+                    </div>
+
+                    <!-- Add Resume Link Button -->
+                    <div class="add-resume-section" id="addResumeSection">
+                        <button class="add-resume-btn" onclick="showResumeForm()">
+                            <span class="material-symbols-outlined">add_link</span>
+                            Add Google Drive Resume Link
+                        </button>
                     </div>
                 </div>
             </div>

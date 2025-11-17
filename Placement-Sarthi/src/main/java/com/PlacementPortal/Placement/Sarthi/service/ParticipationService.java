@@ -1,5 +1,6 @@
 package com.PlacementPortal.Placement.Sarthi.service;
 
+import com.PlacementPortal.Placement.Sarthi.dto.ParticipationDTO;
 import com.PlacementPortal.Placement.Sarthi.entity.Participation;
 import com.PlacementPortal.Placement.Sarthi.entity.Student;
 import com.PlacementPortal.Placement.Sarthi.entity.Event;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ParticipationService {
@@ -56,12 +58,18 @@ public class ParticipationService {
         return participationRepository.save(participation);
     }
 
-    public List<Participation> getParticipationsByStudent(String admissionNumber) {
-        return participationRepository.findByStudent_StudentAdmissionNumber(admissionNumber);
+    public List<ParticipationDTO> getParticipationsByStudent(String admissionNumber) {
+        List<Participation> participations = participationRepository.findByStudent_StudentAdmissionNumber(admissionNumber);
+        return participations.stream()
+                .map(ParticipationDTO::new)
+                .collect(Collectors.toList());
     }
 
-    public List<Participation> getParticipationsByEvent(Long eventId) {
-        return participationRepository.findByEvent_EventId(eventId);
+    public List<ParticipationDTO> getParticipationsByEvent(Long eventId) {
+        List<Participation> participations = participationRepository.findByEvent_EventId(eventId);
+        return participations.stream()
+                .map(ParticipationDTO::new)
+                .collect(Collectors.toList());
     }
 
     public Participation updateParticipationStatus(String admissionNumber, Long eventId, Participation.ParticipationStatus status) {

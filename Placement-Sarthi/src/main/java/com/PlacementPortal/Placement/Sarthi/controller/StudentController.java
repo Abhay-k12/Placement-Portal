@@ -342,4 +342,96 @@ public class StudentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
+    // Add these methods to your existing StudentController
+
+    @PostMapping("/{admissionNumber}/resume-drive-link")
+    public ResponseEntity<Map<String, Object>> updateResumeDriveLink(
+            @PathVariable String admissionNumber,
+            @RequestBody Map<String, String> request) {
+
+        try {
+            String driveLink = request.get("driveLink");
+
+            if (driveLink == null || driveLink.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Drive link is required"
+                ));
+            }
+
+            // Validate Google Drive link format
+            if (!isValidDriveLink(driveLink)) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "success", false,
+                        "message", "Please provide a valid Google Drive shareable link"
+                ));
+            }
+
+            Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
+            if (student == null) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "success", false,
+                        "message", "Student not found"
+                ));
+            }
+
+            // Use the existing resume_link column
+            student.setResumeLink(driveLink);
+            studentService.updateStudent(admissionNumber, student);
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Resume drive link updated successfully",
+                    "resumeLink", driveLink
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "Failed to update resume link: " + e.getMessage()
+            ));
+        }
+    }
+
+    @GetMapping("/{admissionNumber}/resume-drive-link")
+    public ResponseEntity<Map<String, Object>> getResumeDriveLink(
+            @PathVariable String admissionNumber) {
+
+        try {
+            Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
+            if (student == null) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "success", false,
+                        "message", "Student not found"
+                ));
+            }
+
+            String resumeLink = student.getResumeLink();
+
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "resumeLink", resumeLink != null ? resumeLink : "",
+                    "hasResume", resumeLink != null && !resumeLink.trim().isEmpty()
+            ));
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "Failed to get resume link: " + e.getMessage()
+            ));
+        }
+    }
+
+    // Helper method to validate Google Drive links
+    private boolean isValidDriveLink(String link) {
+        if (link == null) return false;
+
+        // Basic validation for Google Drive links
+        return link.matches("^https://drive\\.google\\.com/.*") ||
+                link.matches("^https://docs\\.google\\.com/.*") ||
+                link.startsWith("https://") && link.contains("drive.google.com");
+    }
 }

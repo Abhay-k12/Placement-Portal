@@ -54,6 +54,8 @@ function showSection(sectionId) {
         initializeEventsSection();
     } else if (sectionId === 'records') {
         loadRecordsSection();
+    } else if (sectionId === 'resume') {
+        loadResumeSection();
     }
 }
 
@@ -280,10 +282,47 @@ function getEventStatus(event) {
     return { class: 'past', text: 'Completed' };
 }
 
-function formatEventDate(dateString) {
-    if (!dateString) return 'Not specified';
+// Format date for display - COMPREHENSIVE VERSION
+function formatEventDate(dateInput) {
+
+    if (!dateInput) return 'Date TBA';
+
     try {
-        const date = new Date(dateString);
+        let date;
+
+        // If it's already a Date object
+        if (dateInput instanceof Date) {
+            date = dateInput;
+        }
+        // If it's a string
+        else if (typeof dateInput === 'string') {
+            // Remove any timezone issues by splitting on 'T'
+            const datePart = dateInput.split('T')[0];
+            const timePart = dateInput.split('T')[1];
+
+            if (datePart) {
+                date = new Date(datePart + (timePart ? 'T' + timePart : ''));
+            } else {
+                date = new Date(dateInput);
+            }
+        }
+        // If it's a number (timestamp)
+        else if (typeof dateInput === 'number') {
+            date = new Date(dateInput);
+        }
+        // If it's some other format
+        else {
+            console.log('Unknown date format, converting to string:', dateInput);
+            date = new Date(String(dateInput));
+        }
+
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            console.log('Invalid date detected:', dateInput);
+            return 'Date TBA';
+        }
+
+        // Format the valid date
         return date.toLocaleDateString('en-US', {
             day: '2-digit',
             month: 'short',
@@ -291,8 +330,10 @@ function formatEventDate(dateString) {
             hour: '2-digit',
             minute: '2-digit'
         });
+
     } catch (error) {
-        return dateString;
+        console.error('Error in formatEventDate:', error, 'Input:', dateInput);
+        return 'Date TBA';
     }
 }
 
@@ -1086,4 +1127,318 @@ function globalSearch(event) {
 
     // Show message
     alert(`Searching for "${query}" in events...`);
+}
+
+// ========== RECORDS SECTION ==========
+// Load records section
+async function loadRecordsSection() {
+    showRecordsLoading();
+
+    try {
+        const participations = await fetchStudentParticipations();
+
+        if (participations.length === 0) {
+            showNoRecords();
+        } else {
+            renderRecordsTable(participations);
+            currentRecords = participations; // Store for filtering
+        }
+
+    } catch (error) {
+        console.error('Error loading records:', error);
+        showRecordsError('Failed to load your application history');
+    }
+}
+
+// Fetch student participations from API
+async function fetchStudentParticipations() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    if (!currentUser) {
+        throw new Error('User not logged in');
+    }
+
+    const response = await fetch(`http://localhost:8081/api/participations/student/${currentUser.id}`);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return await response.json();
+}
+
+// Render records table
+function renderRecordsTable(participations) {
+    const tableBody = document.getElementById('recordsTableBody');
+    const table = document.getElementById('recordsTable');
+    const noRecords = document.getElementById('noRecords');
+
+    // Clear existing rows
+    tableBody.innerHTML = '';
+
+    // Sort participations by creation date (newest first)
+    participations.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    // Add rows for each participation
+    participations.forEach(participation => {
+        const row = createRecordRow(participation);
+        tableBody.appendChild(row);
+    });
+
+    // Show table
+    table.style.display = 'table';
+    noRecords.style.display = 'none';
+    hideRecordsLoading();
+}
+
+// Create a table row for a participation record
+function createRecordRow(participation) {
+    const row = document.createElement('tr');
+
+    const event = participation.event;
+    const status = participation.status;
+    const createdAt = new Date(participation.createdAt);
+    const eventDate = event ? new Date(event.registrationStart) : null;
+
+    row.innerHTML = `
+        <td>${event ? event.organizingCompany : 'Unknown Company'}</td>
+        <td>${event ? event.jobRole : 'Not specified'}</td>
+        <td>${eventDate ? formatEventDate(eventDate) : 'Not scheduled'}</td>
+        <td>${formatEventDate(createdAt)}</td>
+        <td><span class="status-badge status-${status.toLowerCase()}">${formatStatus(status)}</span></td>
+        <td>${participation.eventDescription || getDefaultRemarks(status)}</td>
+    `;
+
+    return row;
+}
+
+// Format status for display
+function formatStatus(status) {
+    const statusMap = {
+        'REGISTERED': 'Registered',
+        'SELECTED': 'Selected',
+        'ATTEMPTED': 'Attempted',
+        'COMPLETED': 'Completed',
+        'REJECTED': 'Rejected',
+        'ABSENT': 'Absent'
+    };
+    return statusMap[status] || status;
+}
+
+// Get default remarks based on status
+function getDefaultRemarks(status) {
+    const remarksMap = {
+        'REGISTERED': 'Application submitted',
+        'SELECTED': 'Congratulations! Offer received',
+        'ATTEMPTED': 'Assessment completed',
+        'COMPLETED': 'Process completed',
+        'REJECTED': 'Application not selected',
+        'ABSENT': 'Did not attend'
+    };
+    return remarksMap[status] || 'No remarks';
+}
+
+// Search records
+function searchRecords() {
+    const searchTerm = document.getElementById('recordsSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    filterAndDisplayRecords(searchTerm, statusFilter);
+}
+
+// Filter records
+function filterRecords() {
+    const searchTerm = document.getElementById('recordsSearch').value.toLowerCase();
+    const statusFilter = document.getElementById('statusFilter').value;
+
+    filterAndDisplayRecords(searchTerm, statusFilter);
+}
+
+// Filter and display records based on search and status
+function filterAndDisplayRecords(searchTerm, statusFilter) {
+    if (!currentRecords) return;
+
+    const filtered = currentRecords.filter(participation => {
+        const event = participation.event;
+        const matchesSearch = !searchTerm ||
+            (event && event.organizingCompany.toLowerCase().includes(searchTerm)) ||
+            (event && event.jobRole.toLowerCase().includes(searchTerm));
+
+        const matchesStatus = statusFilter === 'all' || participation.status === statusFilter;
+
+        return matchesSearch && matchesStatus;
+    });
+
+    if (filtered.length === 0) {
+        showNoRecords();
+    } else {
+        renderRecordsTable(filtered);
+    }
+}
+
+// UI State Functions for Records
+function showRecordsLoading() {
+    document.getElementById('recordsLoading').style.display = 'block';
+    document.getElementById('recordsError').style.display = 'none';
+    document.getElementById('recordsTable').style.display = 'none';
+    document.getElementById('noRecords').style.display = 'none';
+}
+
+function hideRecordsLoading() {
+    document.getElementById('recordsLoading').style.display = 'none';
+}
+
+function showRecordsError(message) {
+    document.getElementById('recordsLoading').style.display = 'none';
+    document.getElementById('recordsError').style.display = 'block';
+    document.getElementById('recordsTable').style.display = 'none';
+    document.getElementById('noRecords').style.display = 'none';
+    document.getElementById('errorMessage').textContent = message;
+}
+
+function showNoRecords() {
+    document.getElementById('recordsLoading').style.display = 'none';
+    document.getElementById('recordsError').style.display = 'none';
+    document.getElementById('recordsTable').style.display = 'none';
+    document.getElementById('noRecords').style.display = 'block';
+    hideRecordsLoading();
+}
+
+// Global variable to store current records for filtering
+let currentRecords = [];
+
+
+// ========== RESUME SECTION FUNCTIONS ==========
+
+// Load resume section
+async function loadResumeSection() {
+    try {
+        await loadCurrentResumeLink();
+    } catch (error) {
+        console.error('Error loading resume section:', error);
+        showResumeMessage('Failed to load resume information', 'error');
+    }
+}
+
+// Load current resume link
+async function loadCurrentResumeLink() {
+    try {
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) return;
+
+        const response = await fetch(`http://localhost:8081/api/students/${currentUser.id}/resume-drive-link`);
+
+        if (response.ok) {
+            const data = await response.json();
+
+            if (data.hasResume && data.resumeLink) {
+                // Show resume details
+                document.getElementById('noResume').style.display = 'none';
+                document.getElementById('resumeDetails').style.display = 'block';
+                document.getElementById('addResumeSection').style.display = 'none';
+
+                // Display shortened link
+                const resumeLink = data.resumeLink;
+                const displayLink = resumeLink.length > 50
+                    ? resumeLink.substring(0, 50) + '...'
+                    : resumeLink;
+                document.getElementById('currentResumeLink').textContent = displayLink;
+                document.getElementById('currentResumeLink').title = resumeLink;
+
+            } else {
+                // Show no resume state
+                document.getElementById('noResume').style.display = 'block';
+                document.getElementById('resumeDetails').style.display = 'none';
+                document.getElementById('addResumeSection').style.display = 'block';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading resume link:', error);
+    }
+}
+
+// Show resume form
+function showResumeForm() {
+    document.getElementById('resumeFormSection').style.display = 'block';
+    document.getElementById('addResumeSection').style.display = 'none';
+    document.getElementById('resumeDriveLink').value = '';
+}
+
+// Hide resume form
+function hideResumeForm() {
+    document.getElementById('resumeFormSection').style.display = 'none';
+    document.getElementById('addResumeSection').style.display = 'block';
+}
+
+// Save resume link
+async function saveResumeLink() {
+    const driveLink = document.getElementById('resumeDriveLink').value.trim();
+
+    if (!driveLink) {
+        showResumeMessage('Please enter a Google Drive link', 'error');
+        return;
+    }
+
+    // Basic validation for Google Drive links
+    if (!driveLink.includes('drive.google.com') && !driveLink.includes('docs.google.com')) {
+        showResumeMessage('Please provide a valid Google Drive link', 'error');
+        return;
+    }
+
+    try {
+        const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+        if (!currentUser) {
+            showResumeMessage('Please login first', 'error');
+            return;
+        }
+
+        const response = await fetch(`http://localhost:8081/api/students/${currentUser.id}/resume-drive-link`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ driveLink: driveLink })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showResumeMessage('Resume link saved successfully!', 'success');
+            hideResumeForm();
+            await loadCurrentResumeLink();
+        } else {
+            showResumeMessage(result.message || 'Failed to save resume link', 'error');
+        }
+
+    } catch (error) {
+        console.error('Error saving resume link:', error);
+        showResumeMessage('Network error. Please try again.', 'error');
+    }
+}
+
+// View resume in new tab
+function viewResume() {
+    const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+    if (!currentUser) return;
+
+    // Get the resume link from the current display
+    const resumeLinkElement = document.getElementById('currentResumeLink');
+    const resumeLink = resumeLinkElement.title || resumeLinkElement.textContent;
+
+    if (resumeLink && resumeLink.startsWith('http')) {
+        window.open(resumeLink, '_blank');
+    } else {
+        showResumeMessage('Invalid resume link', 'error');
+    }
+}
+
+// Show resume messages
+function showResumeMessage(message, type = 'info') {
+    const messageDiv = document.getElementById('resumeMessage');
+    messageDiv.textContent = message;
+    messageDiv.className = `message ${type}`;
+    messageDiv.style.display = 'block';
+
+    setTimeout(() => {
+        messageDiv.style.display = 'none';
+    }, 5000);
 }

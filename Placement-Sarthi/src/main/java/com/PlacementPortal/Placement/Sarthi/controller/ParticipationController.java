@@ -1,5 +1,6 @@
 package com.PlacementPortal.Placement.Sarthi.controller;
 
+import com.PlacementPortal.Placement.Sarthi.dto.ParticipationDTO;
 import com.PlacementPortal.Placement.Sarthi.entity.Participation;
 import com.PlacementPortal.Placement.Sarthi.service.ParticipationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,9 +43,9 @@ public class ParticipationController {
     }
 
     @GetMapping("/student/{admissionNumber}")
-    public ResponseEntity<List<Participation>> getStudentParticipations(@PathVariable String admissionNumber) {
+    public ResponseEntity<List<ParticipationDTO>> getStudentParticipations(@PathVariable String admissionNumber) {
         try {
-            List<Participation> participations = participationService.getParticipationsByStudent(admissionNumber);
+            List<ParticipationDTO> participations = participationService.getParticipationsByStudent(admissionNumber);
             return ResponseEntity.ok(participations);
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
@@ -52,9 +53,9 @@ public class ParticipationController {
     }
 
     @GetMapping("/event/{eventId}")
-    public ResponseEntity<List<Participation>> getEventParticipations(@PathVariable Long eventId) {
+    public ResponseEntity<List<ParticipationDTO>> getEventParticipations(@PathVariable Long eventId) {
         try {
-            List<Participation> participations = participationService.getParticipationsByEvent(eventId);
+            List<ParticipationDTO> participations = participationService.getParticipationsByEvent(eventId);
             return ResponseEntity.ok(participations);
         } catch (Exception e) {
             return ResponseEntity.status(500).build();
