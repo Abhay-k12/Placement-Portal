@@ -284,19 +284,16 @@ function getEventStatus(event) {
 
 // Format date for display - COMPREHENSIVE VERSION
 function formatEventDate(dateInput) {
-
     if (!dateInput) return 'Date TBA';
 
     try {
         let date;
 
-        // If it's already a Date object
+        // Handle different date input types
         if (dateInput instanceof Date) {
             date = dateInput;
-        }
-        // If it's a string
-        else if (typeof dateInput === 'string') {
-            // Remove any timezone issues by splitting on 'T'
+        } else if (typeof dateInput === 'string') {
+            // Handle ISO string with timezone
             const datePart = dateInput.split('T')[0];
             const timePart = dateInput.split('T')[1];
 
@@ -305,34 +302,29 @@ function formatEventDate(dateInput) {
             } else {
                 date = new Date(dateInput);
             }
-        }
-        // If it's a number (timestamp)
-        else if (typeof dateInput === 'number') {
+        } else if (typeof dateInput === 'number') {
             date = new Date(dateInput);
-        }
-        // If it's some other format
-        else {
-            console.log('Unknown date format, converting to string:', dateInput);
+        } else {
             date = new Date(String(dateInput));
         }
 
-        // Check if the date is valid
+        // Check if date is valid
         if (isNaN(date.getTime())) {
-            console.log('Invalid date detected:', dateInput);
+            console.warn('Invalid date detected:', dateInput);
             return 'Date TBA';
         }
 
-        // Format the valid date
+        // Format the date nicely
         return date.toLocaleDateString('en-US', {
-            day: '2-digit',
-            month: 'short',
             year: 'numeric',
+            month: 'short',
+            day: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
 
     } catch (error) {
-        console.error('Error in formatEventDate:', error, 'Input:', dateInput);
+        console.error('Error formatting date:', error, 'Input:', dateInput);
         return 'Date TBA';
     }
 }
@@ -566,7 +558,6 @@ async function loadProfileSection() {
         if (studentData) {
             currentStudentData = studentData;
             updateProfileSection(studentData);
-            updateResumeSection(studentData);
         } else {
             if (user.studentData) {
                 currentStudentData = user.studentData;
@@ -610,30 +601,6 @@ function updateProfileSection(studentData) {
         studentData.twelfthPercentage + '%' : 'Not specified';
     document.getElementById('profileBacklogs').textContent = studentData.backLogsCount !== null ?
         studentData.backLogsCount : '0';
-}
-
-// Function to update resume section
-function updateResumeSection(studentData) {
-    const resumeFileName = document.getElementById('resumeFileName');
-    const resumeStatus = document.getElementById('resumeStatus');
-    const downloadBtn = document.getElementById('downloadResumeBtn');
-
-    if (studentData.resumeLink) {
-        // Extract filename from URL
-        const fileName = studentData.resumeLink.split('/').pop() || 'Resume.pdf';
-        resumeFileName.textContent = fileName;
-        resumeStatus.textContent = 'Uploaded';
-        resumeStatus.style.color = '#27ae60';
-        downloadBtn.style.display = 'flex';
-
-        // Add download functionality
-        downloadBtn.onclick = () => downloadResume(studentData.resumeLink);
-    } else {
-        resumeFileName.textContent = 'No resume uploaded';
-        resumeStatus.textContent = 'Not uploaded';
-        resumeStatus.style.color = '#e74c3c';
-        downloadBtn.style.display = 'none';
-    }
 }
 
 // Toggle between view and edit modes
@@ -1042,10 +1009,26 @@ function showEventForm() {
     alert('Please use the "Register" button on individual event cards');
 }
 
-// Records Section
+// ========== RECORDS SECTION ==========
+// Load records section
 async function loadRecordsSection() {
-    // Simple implementation for now
-    console.log('Loading records section');
+    showRecordsLoading();
+
+    try {
+        const participations = await fetchStudentParticipations();
+        console.log('Raw participations data:', participations); // Debug log
+
+        if (participations.length === 0) {
+            showNoRecords();
+        } else {
+            renderRecordsTable(participations);
+            currentRecords = participations; // Store for filtering
+        }
+
+    } catch (error) {
+        console.error('Error loading records:', error);
+        showRecordsError('Failed to load your application history');
+    }
 }
 
 // Adding CSS animation
@@ -1190,25 +1173,61 @@ function renderRecordsTable(participations) {
     hideRecordsLoading();
 }
 
+
 // Create a table row for a participation record
 function createRecordRow(participation) {
     const row = document.createElement('tr');
 
-    const event = participation.event;
-    const status = participation.status;
+    // Extract event data
+    let eventData = participation.event || participation.eventDto || {};
+    if (!eventData.organizingCompany && participation.organizingCompany) {
+        eventData = participation;
+    }
+
+    const status = participation.participationStatus || participation.status || 'REGISTERED';
     const createdAt = new Date(participation.createdAt);
-    const eventDate = event ? new Date(event.registrationStart) : null;
+    const eventDate = eventData.registrationStart ? new Date(eventData.registrationStart) : null;
+
+    const companyName = eventData.organizingCompany || eventData.companyName || 'Unknown Company';
+    const jobRole = eventData.jobRole || eventData.role || 'Not specified';
+    const eventDescription = participation.eventDescription || eventData.eventDescription || getDefaultRemarks(status);
 
     row.innerHTML = `
-        <td>${event ? event.organizingCompany : 'Unknown Company'}</td>
-        <td>${event ? event.jobRole : 'Not specified'}</td>
-        <td>${eventDate ? formatEventDate(eventDate) : 'Not scheduled'}</td>
-        <td>${formatEventDate(createdAt)}</td>
-        <td><span class="status-badge status-${status.toLowerCase()}">${formatStatus(status)}</span></td>
-        <td>${participation.eventDescription || getDefaultRemarks(status)}</td>
+        <td class="company-cell">
+            <div class="company-info">
+                <div class="company-logo">${companyName.charAt(0).toUpperCase()}</div>
+                <div class="company-details">
+                    <div class="company-name">${companyName}</div>
+                    <div class="job-role">${jobRole}</div>
+                </div>
+            </div>
+        </td>
+        <td class="date-cell">${eventDate ? formatTableDate(eventDate) : 'TBA'}</td>
+        <td class="date-cell">${formatTableDate(createdAt)}</td>
+        <td class="status-cell">
+            <span class="status-badge status-${status.toLowerCase()}">${formatStatus(status)}</span>
+        </td>
+        <td class="remarks-cell">${eventDescription}</td>
     `;
 
     return row;
+}
+
+function formatTableDate(dateInput) {
+    if (!dateInput) return 'TBA';
+
+    try {
+        const date = new Date(dateInput);
+        if (isNaN(date.getTime())) return 'TBA';
+
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (error) {
+        return 'TBA';
+    }
 }
 
 // Format status for display
@@ -1303,12 +1322,117 @@ function showNoRecords() {
     hideRecordsLoading();
 }
 
+
+const recordsStyles = `
+    .records-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem;
+        color: #64748b;
+    }
+
+    .records-loading .spin {
+        animation: spin 1s linear infinite;
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .status-registered {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-selected {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .status-attempted {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-completed {
+        background-color: #dcfce7;
+        color: #166534;
+    }
+
+    .status-rejected {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+
+    .status-absent {
+        background-color: #f3f4f6;
+        color: #374151;
+    }
+
+    .records-error {
+        text-align: center;
+        padding: 2rem;
+        color: #ef4444;
+    }
+
+    .records-error .material-symbols-outlined {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .retry-btn {
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 0.375rem;
+        cursor: pointer;
+    }
+
+    .no-records {
+        text-align: center;
+        padding: 3rem;
+        color: #64748b;
+    }
+
+    .no-records .material-symbols-outlined {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.5;
+    }
+
+    .browse-events-btn {
+        margin-top: 1rem;
+        padding: 0.75rem 1.5rem;
+        background: #10b981;
+        color: white;
+        border: none;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+`;
+
+// Add the styles to the document
+if (!document.querySelector('#records-styles')) {
+    const styleElement = document.createElement('style');
+    styleElement.id = 'records-styles';
+    styleElement.textContent = recordsStyles;
+    document.head.appendChild(styleElement);
+}
+
 // Global variable to store current records for filtering
 let currentRecords = [];
 
-
 // ========== RESUME SECTION FUNCTIONS ==========
-
 // Load resume section
 async function loadResumeSection() {
     try {
