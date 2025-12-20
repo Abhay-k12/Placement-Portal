@@ -21,22 +21,22 @@
 ## 📖 Problem Statement
 The conventional campus placement system suffers from significant inefficiencies due to its reliance on fragmented, manual processes:
 
-### 📧Communication Bottlenecks
+### Communication Bottlenecks
 - **Email Overload**: Placement cells exchange 100+ emails per company, creating communication chaos and missed information
 - **Information Delays**: Critical updates about tests, interviews, and results take days to reach all stakeholders
 - **Platform Fragmentation**: Communication happens across emails, WhatsApp, phone calls, and physical notice boards
 
-### 📊Administrative Overhead
+### Administrative Overhead
 - **Data Duplication**: Students re-enter identical information across multiple Google Forms for different companies
 - **Time Consumption**: Placement officers spend 60-70% of their time on administrative coordination rather than strategy
 - **Manual Processes**: Every placement drive requires creating new forms, spreadsheets, and communication templates
 
-### 💾Data Management Challenges
+### Data Management Challenges
 - **Siloed Information**: Student data resides in separate Excel sheets, email attachments, and paper records
 - **Error-Prone Updates**: Manual data entry leads to incorrect eligibility lists and missed opportunities
 - **Poor Analytics**: No centralized system to track placement trends, success rates, or student performance
 
-### ⚠️Process Inefficiencies
+### Process Inefficiencies
 - **Limited Scalability**: Manual systems struggle to handle multiple placement drives simultaneously
 - **Repetitive Work**: The same administrative tasks repeat for every company visit
 - **Compliance Risks**: Manual processes increase chances of errors in critical placement documentation
@@ -50,26 +50,26 @@ These inefficiencies result in delayed placements, reduced company participation
 ## 💡 Our Solution
 Placement Sarthi revolutionizes campus recruitment by providing an integrated, automated platform that eliminates fragmentation and manual inefficiencies. Our solution delivers:
 
-### 🎓 **For Students: Comprehensive Career Management**
+### **For Students: Comprehensive Career Management**
 - **Single-Source Profile Management**: Create and maintain one comprehensive profile accessible to all incoming recruiters.
 - **Intelligent Event Discovery**: Single click apply option for matching placement drives based on eligibility, interests, and skills.
 - **Real-time Application Tracking**: Monitor application status from registration to final selection.
 - **Resume Management**: Google Drive integration for centralized resume storage and sharing.
 
-### 🏢 **For Companies: Streamlined Recruitment Operations**
+### **For Companies: Streamlined Recruitment Operations**
 - **Simplified Registration**: Single-point registration with approval workflow and verification.
 - **Targeted Job Postings**: Create detailed position descriptions with specific eligibility criteria.
 - **Smart Candidate Filtering**: AI-powered shortlisting based on CGPA, skills, department, and other parameters.
 - **Smart Scheduling**: Schedule Online Assesments and Interviews efficiently.
 - **Compliance Management**: Ensure adherence to institutional placement policies and procedures.
 
-### 👨‍💼 **For Administrators: Centralized Placement Governance**
+### **For Administrators: Centralized Placement Governance**
 - **Complete User Management**: Approve, monitor, and manage all student and company accounts.
 - **Event Orchestration**: End-to-end coordination of placement drives from announcement to completion.
 - **Policy Enforcement**: Configure and enforce institutional placement rules and eligibility criteria.
 - **Student Management**: Management of Students with various placement related metrics.
 
-### 📊 **Enterprise-Grade Operations Management**
+### **Enterprise-Grade Operations Management**
 - **Bulk Data Processing**: Excel/CSV import/export for student registrations, company data, and event management
 - **Role-Based Messaging**: Secure communication channels between companies, and administrators
 - **Audit Trail**: Complete logging of all communications and transactions for transparency and compliance
@@ -266,6 +266,8 @@ graph LR
 
 ## 🗄️ About The Database
 
+Placement Sarthi follows a traditional *RDMS* (Relational database schema), implemented with *SQL* having multiple entities participating in relationships for ensuring scalability, maintainability, and security.
+
 ### 🎯VISUAL REPRESENTATION OF ER DIAGRAM
 
 ```mermaid
@@ -369,27 +371,27 @@ graph LR
 
 ## 🚀 Key Features
 
-### 🎓 Student Module
+### Student Module
 - **Profile Management**: Complete academic and personal information
 - **Event Registration**: Register for placement drives
 - **Application Tracking**: Monitor application status
 - **Resume Management**: Google Drive integration for resume storage
 - **Dashboard Analytics**: Performance metrics and progress tracking
 
-### 🏢 Company Module
+### Company Module
 - **Registration & Approval**: Company onboarding workflow
 - **Job Postings**: Create and manage placement opportunities
 - **Candidate Search**: Filter and shortlist eligible students
 - **Event Management**: Schedule and manage placement drives
 
-### 👨‍💼 Admin Module
+### Admin Module
 - **User Management**: Approve/disable student and company accounts
 - **Event Coordination**: Create and manage all placement events
 - **Bulk Operations**: Import/export data via Excel/CSV
 - **Analytics Dashboard**: Placement statistics and reports
 - **System Configuration**: Manage platform settings
 
-### 🔧 Technical Features
+### Technical Features
 - **Role-based Authentication**: Secure access for all user types
 - **RESTful APIs**: Complete CRUD operations for all entities
 - **Excel Processing**: Bulk data import/export functionality
@@ -537,6 +539,7 @@ Placement-Sarthi/
 
 ## 📸 Application Screenshots
 
+
 ### 🏠 Home Page
 <p align="center">
   <img src="Placement-Sarthi/src/main/resources/previewImages/homePage1.png" width="85%" alt="Home Page 1"/>
@@ -580,15 +583,14 @@ Placement-Sarthi/
 
 ## 🚀 Quick Start Guide
 
-### 📌 Prerequisites
+### Prerequisites
 - ✅ **Java 17** or higher
 - ✅ **Maven 3.6** or higher
 - ✅ **MySQL 8.0** or higher
 - ✅ **Modern web browser** (Chrome, Firefox, Edge)
 
-<br>
 
-### 📥 Installation & Setup
+### Installation & Setup
 
 1. **Clone the repository**
    ```bash
@@ -596,14 +598,10 @@ Placement-Sarthi/
    cd Placement-Portal
    ```
 
-<br>
-
 2. **Configure database**
    ```sql
    CREATE DATABASE IF NOT EXISTS placement_sarthi;
    ```
-
-<br>
 
 3. **Update application properties**
    ```properties
@@ -614,15 +612,11 @@ Placement-Sarthi/
    spring.jpa.hibernate.ddl-auto=update
    ```
 
-<br>
-
 4. **Build and run the application**
    ```bash
    mvn clean install
    mvn spring-boot:run
    ```
-
-<br>
 
 5. **Access the application**
    ```
@@ -672,13 +666,11 @@ Placement-Sarthi/
 ---
 
 ## 📊 Project Progress & Deliverables
-
-### ✅ Completed Modules (100%)
-- 🎓 **Student Module**: Complete with profile, events, and resume management
-- 🏢 **Company Module**: Full registration and job posting workflow
-- 👨‍💼 **Admin Module**: Comprehensive user and event management
-- 📅 **Event Management**: End-to-end event creation and tracking
-- 📊 **Bulk Operations**: Excel import/export functionality
+- **Student Module**: Complete with profile, events, and resume management
+- **Company Module**: Full registration and job posting workflow
+- **Admin Module**: Comprehensive user and event management
+- **Event Management**: End-to-end event creation and tracking
+- **Bulk Operations**: Excel import/export functionality
 
 
 <br>
@@ -687,14 +679,14 @@ Placement-Sarthi/
 
 ## 🌱 Future Enhancements
 
-- 🔔 **Notification System**: Email/SMS alerts for events and updates
-- 📱 **Mobile Application**: Easy to access Mobile platform app
-- 🎯 **Advanced Analytics**: Machine learning for placement predictions
-- 🔍 **Resume Parser**: Automated extraction of skills and experience
-- 💳 **Interview Scheduling**: Automated calendar integration
-- 📈 **Placement Analytics**: Detailed metrics and reporting dashboard
-- 🤖 **Chatbot Support**: AI-powered assistance for students
-- 🌍 **Multi-language Support**: International student accessibility
+- **Notification System**: Email/SMS alerts for events and updates
+- **Mobile Application**: Easy to access Mobile platform app
+- **Advanced Analytics**: Machine learning for placement predictions
+- **Resume Parser**: Automated extraction of skills and experience
+- **Interview Scheduling**: Automated calendar integration
+- **Placement Analytics**: Detailed metrics and reporting dashboard
+- **Chatbot Support**: AI-powered assistance for students
+- **Multi-language Support**: International student accessibility
 
 <br>
 
