@@ -1,4 +1,4 @@
-# 🎓 Placement Sarthi — Smart Campus Placement Management System
+# 🎓 Placement Sarthi — Campus Placement Management System
 
 <p align="center">
   🚀 A comprehensive Spring Boot web application that automates and streamlines the entire campus placement process, eliminating manual coordination through a centralized platform for students, companies, and administrators.
@@ -21,22 +21,22 @@
 ## 📖 Problem Statement
 The conventional campus placement system suffers from significant inefficiencies due to its reliance on fragmented, manual processes:
 
-## 📧Communication Bottlenecks
+### 📧Communication Bottlenecks
 - **Email Overload**: Placement cells exchange 100+ emails per company, creating communication chaos and missed information
 - **Information Delays**: Critical updates about tests, interviews, and results take days to reach all stakeholders
 - **Platform Fragmentation**: Communication happens across emails, WhatsApp, phone calls, and physical notice boards
 
-## 📊Administrative Overhead
+### 📊Administrative Overhead
 - **Data Duplication**: Students re-enter identical information across multiple Google Forms for different companies
 - **Time Consumption**: Placement officers spend 60-70% of their time on administrative coordination rather than strategy
 - **Manual Processes**: Every placement drive requires creating new forms, spreadsheets, and communication templates
 
-## 💾Data Management Challenges
+### 💾Data Management Challenges
 - **Siloed Information**: Student data resides in separate Excel sheets, email attachments, and paper records
 - **Error-Prone Updates**: Manual data entry leads to incorrect eligibility lists and missed opportunities
 - **Poor Analytics**: No centralized system to track placement trends, success rates, or student performance
 
-## ⚠️Process Inefficiencies
+### ⚠️Process Inefficiencies
 - **Limited Scalability**: Manual systems struggle to handle multiple placement drives simultaneously
 - **Repetitive Work**: The same administrative tasks repeat for every company visit
 - **Compliance Risks**: Manual processes increase chances of errors in critical placement documentation
@@ -263,35 +263,280 @@ graph LR
 
 ---
 
+## 🗄️ Database Schema
+
+###  📊VISUAL REPRESENTATION OF ER DIAGRAM
+
+```mermaid
+graph TB
+    %% ============================================
+    %% VISUAL REPRESENTATION OF ER DIAGRAM
+    %% ============================================
+
+    %% ========== ENTITY BOXES ==========
+    
+    subgraph "ENTITIES"
+        ADMIN["<center><b>ADMIN</b></center><br/>admin_id: BIGINT (PK)<br/>admin_name: VARCHAR<br/>email_address: VARCHAR (UK)<br/>phone_number: VARCHAR<br/>password: VARCHAR"]
+        
+        COMPANY["<center><b>COMPANY</b></center><br/>company_id: VARCHAR (PK)<br/>company_name: VARCHAR (UK)<br/>hr_name: VARCHAR<br/>hr_email: VARCHAR<br/>password: VARCHAR"]
+        
+        STUDENT["<center><b>STUDENT</b></center><br/>student_admission_number: VARCHAR (PK)<br/>first_name: VARCHAR<br/>last_name: VARCHAR<br/>email_id: VARCHAR<br/>department: VARCHAR<br/>cgpa: DOUBLE<br/>password: VARCHAR"]
+        
+        EVENT["<center><b>EVENT</b></center><br/>event_id: BIGINT (PK)<br/>event_name: VARCHAR<br/>organizing_company: VARCHAR<br/>job_role: VARCHAR<br/>status: ENUM<br/>expected_package: DOUBLE"]
+        
+        PARTICIPATION["<center><b>PARTICIPATION</b></center><br/>student_admission_number: VARCHAR (PK,FK)<br/>event_id: BIGINT (PK,FK)<br/>participation_status: ENUM"]
+        
+        MESSAGE["<center><b>MESSAGE</b></center><br/>id: BIGINT (PK)<br/>sender_name: VARCHAR<br/>sender_email: VARCHAR<br/>subject: VARCHAR<br/>message: TEXT"]
+    end
+
+    %% ========== RELATIONSHIPS ==========
+    
+    ORG["<center>ORGANIZES<br/>(1:N)</center>"]
+    REG["<center>REGISTERS_FOR<br/>(1:N)</center>"]
+    HAS["<center>HAS_REGISTRATIONS<br/>(1:N)</center>"]
+
+    %% ========== CONNECTIONS ==========
+    
+    COMPANY --> ORG
+    ORG --> EVENT
+    
+    STUDENT --> REG
+    REG --> PARTICIPATION
+    
+    EVENT --> HAS
+    HAS --> PARTICIPATION
+
+    %% ========== STYLING ==========
+    
+    style ADMIN fill:#FF6B6B,color:white,stroke:#333,stroke-width:2px
+    style COMPANY fill:#4ECDC4,color:white,stroke:#333,stroke-width:2px
+    style STUDENT fill:#FFD166,color:black,stroke:#333,stroke-width:2px
+    style EVENT fill:#06D6A0,color:white,stroke:#333,stroke-width:2px
+    style PARTICIPATION fill:#118AB2,color:white,stroke:#333,stroke-width:2px
+    style MESSAGE fill:#EF476F,color:white,stroke:#333,stroke-width:2px
+    
+    style ORG fill:#FFD700,color:black,stroke:#333,stroke-width:1px
+    style REG fill:#FFD700,color:black,stroke:#333,stroke-width:1px
+    style HAS fill:#FFD700,color:black,stroke:#333,stroke-width:1px
+
+    %% ========== LEGEND ==========
+    
+    subgraph "LEGEND"
+        L1["PK = Primary Key"]
+        L2["UK = Unique Key"]
+        L3["FK = Foreign Key"]
+        L4["1:N = One to Many"]
+    end
+```
+
+<br>
+
+## 🔄 Data Flow Diagram
+
+```mermaid
+graph LR
+    subgraph "User Entities"
+        S[Student]
+        C[Company]
+        A[Admin]
+    end
+    
+    subgraph "Core Process"
+        S -->|Registers for| E[Event]
+        C -->|Organizes| E
+        E -->|Creates| P[Participation Record]
+    end
+    
+    subgraph "Communication"
+        A -->|Manages| M[Messages]
+        C -->|Sends| M
+        S -->|Receives| M
+    end
+    
+    style S fill:#FFD166,color:black
+    style C fill:#4ECDC4,color:white
+    style A fill:#FF6B6B,color:white
+    style E fill:#06D6A0,color:white
+    style P fill:#118AB2,color:white
+    style M fill:#EF476F,color:white
+```
+
+
+### Core Tables
+```sql
+
+-- Create Database
+CREATE DATABASE IF NOT EXISTS placement_sarthi;
+
+USE placement_sarthi;
+
+-- ADMINISTRATORS TABLE
+CREATE TABLE admins (
+    admin_id BIGINT NOT NULL AUTO_INCREMENT,
+    admin_name VARCHAR(255) NOT NULL,
+    email_address VARCHAR(255) NOT NULL,
+    phone_number VARCHAR(255),
+    city VARCHAR(255),
+    department VARCHAR(255),
+    date_of_birth DATE,
+    last_login TIMESTAMP NULL,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (admin_id),
+    UNIQUE (email_address)
+);
+
+
+-- COMPANIES TABLE
+CREATE TABLE companies (
+    company_id VARCHAR(255) NOT NULL,
+    company_name VARCHAR(255) NOT NULL,
+    hr_name VARCHAR(255) NOT NULL,
+    hr_email VARCHAR(255) NOT NULL,
+    hr_phone VARCHAR(255),
+    photo_link VARCHAR(255),
+    password VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (company_id),
+    UNIQUE (company_name)
+);
+
+
+-- STUDENTS TABLE
+CREATE TABLE students (
+    student_admission_number VARCHAR(20) NOT NULL,
+    student_first_name VARCHAR(50) NOT NULL,
+    student_last_name VARCHAR(50) NOT NULL,
+    father_name VARCHAR(100),
+    mother_name VARCHAR(100),
+    date_of_birth DATE,
+    gender ENUM('Female', 'Male', 'Others'),
+    mobile_no VARCHAR(15),
+    email_id VARCHAR(100),
+    college_email_id VARCHAR(100),
+    department VARCHAR(100),
+    batch VARCHAR(10),
+    cgpa DOUBLE,
+    tenth_percentage DOUBLE,
+    twelfth_percentage DOUBLE,
+    back_logs_count INT DEFAULT 0,
+    address TINYTEXT,
+    resume_link VARCHAR(255),
+    photograph_link VARCHAR(255),
+    course VARCHAR(100),
+    student_university_roll_no VARCHAR(20),
+    student_enrollment_no VARCHAR(20),
+    password VARCHAR(255) DEFAULT 'gehu@123',
+    last_login DATETIME,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (student_admission_number)
+);
+
+
+-- EVENTS TABLE
+CREATE TABLE events (
+    event_id BIGINT NOT NULL AUTO_INCREMENT,
+    event_name VARCHAR(255) NOT NULL,
+    organizing_company VARCHAR(255) NOT NULL,
+    expected_cgpa DOUBLE,
+    job_role VARCHAR(100),
+    registration_start DATETIME NOT NULL,
+    registration_end DATETIME NOT NULL,
+    event_mode ENUM('ONLINE', 'OFFLINE', 'HYBRID') DEFAULT 'ONLINE',
+    expected_package DOUBLE,
+    event_description TEXT NOT NULL,
+    eligible_departments LONGTEXT,
+    status ENUM('UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED') DEFAULT 'UPCOMING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (event_id)
+);
+
+
+-- PARTICIPATION TABLE (Junction Table)
+CREATE TABLE participation (
+    student_admission_number VARCHAR(20) NOT NULL,
+    event_id BIGINT NOT NULL,
+    event_description TEXT,
+    participation_status ENUM('REGISTERED', 'ATTEMPTED', 'COMPLETED', 'ABSENT', 'SELECTED', 'REJECTED') DEFAULT 'REGISTERED',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (student_admission_number, event_id),
+    FOREIGN KEY (student_admission_number) 
+        REFERENCES students(student_admission_number)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (event_id) 
+        REFERENCES events(event_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+-- MESSAGES TABLE
+CREATE TABLE messages (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    sender_name VARCHAR(255) NOT NULL,
+    sender_email VARCHAR(255) NOT NULL,
+    subject VARCHAR(255) NOT NULL,
+    message TEXT NOT NULL,
+    status VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
+
+
+-- Student indexes
+CREATE INDEX idx_student_name ON students(student_first_name, student_last_name);
+CREATE INDEX idx_student_department_cgpa ON students(department, cgpa);
+
+-- Event indexes
+CREATE INDEX idx_event_company_status ON events(organizing_company, status);
+CREATE INDEX idx_event_dates ON events(registration_start, registration_end);
+
+-- Message indexes
+CREATE INDEX idx_message_sender_date ON messages(sender_email, created_at);
+
+-- Participation indexes
+CREATE INDEX idx_participation_student ON participation(student_admission_number);
+CREATE INDEX idx_participation_event ON participation(event_id);
+```
+
+<br>
+
+---
+
 ## 🚀 Key Features
 
 ### 🎓 Student Module
-- ✅ **Profile Management**: Complete academic and personal information
-- ✅ **Event Registration**: Register for placement drives
-- ✅ **Application Tracking**: Monitor application status
-- ✅ **Resume Management**: Google Drive integration for resume storage
-- ✅ **Dashboard Analytics**: Performance metrics and progress tracking
+- **Profile Management**: Complete academic and personal information
+- **Event Registration**: Register for placement drives
+- **Application Tracking**: Monitor application status
+- **Resume Management**: Google Drive integration for resume storage
+- **Dashboard Analytics**: Performance metrics and progress tracking
 
 ### 🏢 Company Module
-- ✅ **Registration & Approval**: Company onboarding workflow
-- ✅ **Job Postings**: Create and manage placement opportunities
-- ✅ **Candidate Search**: Filter and shortlist eligible students
-- ✅ **Event Management**: Schedule and manage placement drives
+- **Registration & Approval**: Company onboarding workflow
+- **Job Postings**: Create and manage placement opportunities
+- **Candidate Search**: Filter and shortlist eligible students
+- **Event Management**: Schedule and manage placement drives
 
 ### 👨‍💼 Admin Module
-- ✅ **User Management**: Approve/disable student and company accounts
-- ✅ **Event Coordination**: Create and manage all placement events
-- ✅ **Bulk Operations**: Import/export data via Excel/CSV
-- ✅ **Analytics Dashboard**: Placement statistics and reports
-- ✅ **System Configuration**: Manage platform settings
+- **User Management**: Approve/disable student and company accounts
+- **Event Coordination**: Create and manage all placement events
+- **Bulk Operations**: Import/export data via Excel/CSV
+- **Analytics Dashboard**: Placement statistics and reports
+- **System Configuration**: Manage platform settings
 
 ### 🔧 Technical Features
-- ✅ **Role-based Authentication**: Secure access for all user types
-- ✅ **RESTful APIs**: Complete CRUD operations for all entities
-- ✅ **Excel Processing**: Bulk data import/export functionality
-- ✅ **Real-time Messaging**: Communication between stakeholders
-- ✅ **Responsive Design**: Mobile-friendly interface
-- ✅ **Database Relationships**: Optimized MySQL schema
+- **Role-based Authentication**: Secure access for all user types
+- **RESTful APIs**: Complete CRUD operations for all entities
+- **Excel Processing**: Bulk data import/export functionality
+- **Real-time Messaging**: Communication between stakeholders
+- **Responsive Design**: Mobile-friendly interface
+- **Database Relationships**: Optimized MySQL schema
 
 <br>
 
@@ -492,7 +737,7 @@ Placement-Sarthi/
 
 2. **Configure database**
    ```sql
-   CREATE DATABASE placement_portal;
+   CREATE DATABASE IF NOT EXISTS placement_sarthi;
    ```
 
 3. **Update application properties**
@@ -519,106 +764,10 @@ Placement-Sarthi/
 
 ---
 
-## 🔌 API Endpoints
 
-### 🎓 Student Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/students` | Get all students |
-| `GET` | `/api/students/{id}` | Get student by ID |
-| `POST` | `/api/students` | Create new student |
-| `PUT` | `/api/students/{id}` | Update student |
-| `GET` | `/api/students/{id}/participations` | Get student participations |
-
-### 🏢 Company Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/companies` | Get all companies |
-| `POST` | `/api/companies` | Register company |
-| `PUT` | `/api/companies/{id}/approve` | Approve company |
-| `GET` | `/api/companies/{id}/events` | Get company events |
-
-### 📅 Event Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/events` | Get all events |
-| `POST` | `/api/events` | Create event |
-| `GET` | `/api/events/{id}/participants` | Get event participants |
-| `POST` | `/api/events/{id}/register` | Register for event |
-
-### 📝 Participation Endpoints
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/participations/register` | Register participation |
-| `GET` | `/api/participations/student/{id}` | Get student participations |
-| `PUT` | `/api/participations/{id}/status` | Update participation status |
-
-### 📊 Bulk Operations
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/bulk/upload-students` | Upload students via Excel |
-| `POST` | `/api/bulk/upload-events` | Upload events via Excel |
-| `GET` | `/api/bulk/export-students` | Export students to Excel |
-
-<br>
-
----
-
-## 🗄️ Database Schema
-
-### Core Tables
-```sql
--- Students Table
-CREATE TABLE student (
-    student_admission_number VARCHAR(20) PRIMARY KEY,
-    student_first_name VARCHAR(50),
-    student_last_name VARCHAR(50),
-    email_id VARCHAR(100),
-    mobile_no VARCHAR(15),
-    department VARCHAR(100),
-    cgpa DOUBLE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Companies Table
-CREATE TABLE company (
-    company_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    company_name VARCHAR(100),
-    email VARCHAR(100),
-    status ENUM('PENDING', 'APPROVED', 'REJECTED'),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Events Table
-CREATE TABLE event (
-    event_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    event_name VARCHAR(255),
-    organizing_company VARCHAR(255),
-    expected_cgpa DOUBLE,
-    job_role VARCHAR(100),
-    registration_start DATETIME,
-    registration_end DATETIME,
-    event_mode ENUM('ONLINE', 'OFFLINE', 'HYBRID'),
-    status ENUM('UPCOMING', 'ONGOING', 'COMPLETED')
-);
-
--- Participations Table
-CREATE TABLE participation (
-    participation_id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    student_admission_number VARCHAR(20),
-    event_id BIGINT,
-    participation_status ENUM('REGISTERED', 'SELECTED', 'REJECTED'),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (student_admission_number) REFERENCES student(student_admission_number),
-    FOREIGN KEY (event_id) REFERENCES event(event_id)
-);
-```
-
-<br>
-
----
 
 ## 🧪 Testing & Validation
+<div align="center">
 
 | Test Type | Status | Notes |
 |-----------|--------|-------|
@@ -629,12 +778,16 @@ CREATE TABLE participation (
 | Security Testing | ✅ Pass | Authentication flow tested |
 | Performance Testing | ✅ Pass | Optimized database queries and indexing |
 
+</div>
+
 <br>
 
 ---
 
 ## 🔧 Challenges & Solutions
 
+<div align="center">
+  
 | Challenge | Solution Implemented |
 |-----------|---------------------|
 | **CORS Configuration** | Created dedicated `CordConfig.java` with comprehensive settings |
@@ -642,6 +795,8 @@ CREATE TABLE participation (
 | **Database Relationships** | Used `@JsonIgnore` and DTO patterns to handle circular dependencies |
 | **Frontend-Backend Integration** | Established clear API contracts and error handling standards |
 | **Bulk Data Processing** | Implemented streaming Excel processing for large datasets |
+
+</div>
 
 <br>
 
@@ -656,9 +811,6 @@ CREATE TABLE participation (
 - 📅 **Event Management**: End-to-end event creation and tracking
 - 📊 **Bulk Operations**: Excel import/export functionality
 
-### 🔄 Advanced Stages
-- 💬 **Message System**: 80% complete - Real-time communication
-- 📝 **Participation Tracking**: 75% complete - Application status management
 
 <br>
 
@@ -667,7 +819,7 @@ CREATE TABLE participation (
 ## 🌱 Future Enhancements
 
 - 🔔 **Notification System**: Email/SMS alerts for events and updates
-- 📱 **Mobile Application**: React Native cross-platform app
+- 📱 **Mobile Application**: Easy to access Mobile platform app
 - 🎯 **Advanced Analytics**: Machine learning for placement predictions
 - 🔍 **Resume Parser**: Automated extraction of skills and experience
 - 💳 **Interview Scheduling**: Automated calendar integration
@@ -696,11 +848,6 @@ CREATE TABLE participation (
   <img src="https://img.shields.io/badge/Connect%20on-LinkedIn-blue?style=for-the-badge&logo=linkedin" alt="LinkedIn - Anvesha Rawat"/>
 </a>
 
-### 👤 Kartik Chadda (Frontend & UI/UX)
-<a href="https://www.linkedin.com/in/kartik-chadda-547a2a2b6">
-  <img src="https://img.shields.io/badge/Connect%20on-LinkedIn-blue?style=for-the-badge&logo=linkedin" alt="LinkedIn - Kartik Chadda"/>
-</a>
-
 </div>
 
 <br>
@@ -709,16 +856,10 @@ CREATE TABLE participation (
 
 <div align="center">
 
-### 🎉 Acknowledgments
-Special thanks to **Graphic Era Hill University** for providing the opportunity to develop this project and all stakeholders who contributed valuable feedback during development.
-
-### ⭐ Support the Project
+## *⭐ Support the Project*
 If you find Placement Sarthi helpful, please consider giving it a star on GitHub!
 
 [![Star on GitHub](https://img.shields.io/github/stars/Abhay-k12/Placement-Portal?style=social)](https://github.com/Abhay-k12/Placement-Portal)
-
-### 📄 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 </div>
 
