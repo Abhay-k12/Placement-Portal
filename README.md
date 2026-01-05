@@ -21,22 +21,22 @@
 ## 📖 Problem Statement
 The conventional campus placement system suffers from significant inefficiencies due to its reliance on fragmented, manual processes:
 
-### 📧Communication Bottlenecks
+### Communication Bottlenecks
 - **Email Overload**: Placement cells exchange 100+ emails per company, creating communication chaos and missed information
 - **Information Delays**: Critical updates about tests, interviews, and results take days to reach all stakeholders
 - **Platform Fragmentation**: Communication happens across emails, WhatsApp, phone calls, and physical notice boards
 
-### 📊Administrative Overhead
+### Administrative Overhead
 - **Data Duplication**: Students re-enter identical information across multiple Google Forms for different companies
 - **Time Consumption**: Placement officers spend 60-70% of their time on administrative coordination rather than strategy
 - **Manual Processes**: Every placement drive requires creating new forms, spreadsheets, and communication templates
 
-### 💾Data Management Challenges
+### Data Management Challenges
 - **Siloed Information**: Student data resides in separate Excel sheets, email attachments, and paper records
 - **Error-Prone Updates**: Manual data entry leads to incorrect eligibility lists and missed opportunities
 - **Poor Analytics**: No centralized system to track placement trends, success rates, or student performance
 
-### ⚠️Process Inefficiencies
+### Process Inefficiencies
 - **Limited Scalability**: Manual systems struggle to handle multiple placement drives simultaneously
 - **Repetitive Work**: The same administrative tasks repeat for every company visit
 - **Compliance Risks**: Manual processes increase chances of errors in critical placement documentation
@@ -50,26 +50,26 @@ These inefficiencies result in delayed placements, reduced company participation
 ## 💡 Our Solution
 Placement Sarthi revolutionizes campus recruitment by providing an integrated, automated platform that eliminates fragmentation and manual inefficiencies. Our solution delivers:
 
-### 🎓 **For Students: Comprehensive Career Management**
+### **For Students: Comprehensive Career Management**
 - **Single-Source Profile Management**: Create and maintain one comprehensive profile accessible to all incoming recruiters.
 - **Intelligent Event Discovery**: Single click apply option for matching placement drives based on eligibility, interests, and skills.
 - **Real-time Application Tracking**: Monitor application status from registration to final selection.
 - **Resume Management**: Google Drive integration for centralized resume storage and sharing.
 
-### 🏢 **For Companies: Streamlined Recruitment Operations**
+### **For Companies: Streamlined Recruitment Operations**
 - **Simplified Registration**: Single-point registration with approval workflow and verification.
 - **Targeted Job Postings**: Create detailed position descriptions with specific eligibility criteria.
 - **Smart Candidate Filtering**: AI-powered shortlisting based on CGPA, skills, department, and other parameters.
 - **Smart Scheduling**: Schedule Online Assesments and Interviews efficiently.
 - **Compliance Management**: Ensure adherence to institutional placement policies and procedures.
 
-### 👨‍💼 **For Administrators: Centralized Placement Governance**
+### **For Administrators: Centralized Placement Governance**
 - **Complete User Management**: Approve, monitor, and manage all student and company accounts.
 - **Event Orchestration**: End-to-end coordination of placement drives from announcement to completion.
 - **Policy Enforcement**: Configure and enforce institutional placement rules and eligibility criteria.
 - **Student Management**: Management of Students with various placement related metrics.
 
-### 📊 **Enterprise-Grade Operations Management**
+### **Enterprise-Grade Operations Management**
 - **Bulk Data Processing**: Excel/CSV import/export for student registrations, company data, and event management
 - **Role-Based Messaging**: Secure communication channels between companies, and administrators
 - **Audit Trail**: Complete logging of all communications and transactions for transparency and compliance
@@ -263,9 +263,12 @@ graph LR
 
 ---
 
-## 🗄️ Database Schema
 
-###  📊VISUAL REPRESENTATION OF ER DIAGRAM
+## 🗄️ About The Database
+
+Placement Sarthi follows a traditional *RDMS* (Relational database schema), implemented with *SQL* having multiple entities participating in relationships for ensuring scalability, maintainability, and security.
+
+### 🎯VISUAL REPRESENTATION OF ER DIAGRAM
 
 ```mermaid
 graph TB
@@ -331,7 +334,7 @@ graph TB
 
 <br>
 
-## 🔄 Data Flow Diagram
+### 🔄 Data Flow Diagram
 
 ```mermaid
 graph LR
@@ -362,175 +365,33 @@ graph LR
 ```
 
 
-### Core Tables
-```sql
-
--- Create Database
-CREATE DATABASE IF NOT EXISTS placement_sarthi;
-
-USE placement_sarthi;
-
--- ADMINISTRATORS TABLE
-CREATE TABLE admins (
-    admin_id BIGINT NOT NULL AUTO_INCREMENT,
-    admin_name VARCHAR(255) NOT NULL,
-    email_address VARCHAR(255) NOT NULL,
-    phone_number VARCHAR(255),
-    city VARCHAR(255),
-    department VARCHAR(255),
-    date_of_birth DATE,
-    last_login TIMESTAMP NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (admin_id),
-    UNIQUE (email_address)
-);
-
-
--- COMPANIES TABLE
-CREATE TABLE companies (
-    company_id VARCHAR(255) NOT NULL,
-    company_name VARCHAR(255) NOT NULL,
-    hr_name VARCHAR(255) NOT NULL,
-    hr_email VARCHAR(255) NOT NULL,
-    hr_phone VARCHAR(255),
-    photo_link VARCHAR(255),
-    password VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (company_id),
-    UNIQUE (company_name)
-);
-
-
--- STUDENTS TABLE
-CREATE TABLE students (
-    student_admission_number VARCHAR(20) NOT NULL,
-    student_first_name VARCHAR(50) NOT NULL,
-    student_last_name VARCHAR(50) NOT NULL,
-    father_name VARCHAR(100),
-    mother_name VARCHAR(100),
-    date_of_birth DATE,
-    gender ENUM('Female', 'Male', 'Others'),
-    mobile_no VARCHAR(15),
-    email_id VARCHAR(100),
-    college_email_id VARCHAR(100),
-    department VARCHAR(100),
-    batch VARCHAR(10),
-    cgpa DOUBLE,
-    tenth_percentage DOUBLE,
-    twelfth_percentage DOUBLE,
-    back_logs_count INT DEFAULT 0,
-    address TINYTEXT,
-    resume_link VARCHAR(255),
-    photograph_link VARCHAR(255),
-    course VARCHAR(100),
-    student_university_roll_no VARCHAR(20),
-    student_enrollment_no VARCHAR(20),
-    password VARCHAR(255) DEFAULT 'gehu@123',
-    last_login DATETIME,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (student_admission_number)
-);
-
-
--- EVENTS TABLE
-CREATE TABLE events (
-    event_id BIGINT NOT NULL AUTO_INCREMENT,
-    event_name VARCHAR(255) NOT NULL,
-    organizing_company VARCHAR(255) NOT NULL,
-    expected_cgpa DOUBLE,
-    job_role VARCHAR(100),
-    registration_start DATETIME NOT NULL,
-    registration_end DATETIME NOT NULL,
-    event_mode ENUM('ONLINE', 'OFFLINE', 'HYBRID') DEFAULT 'ONLINE',
-    expected_package DOUBLE,
-    event_description TEXT NOT NULL,
-    eligible_departments LONGTEXT,
-    status ENUM('UPCOMING', 'ONGOING', 'COMPLETED', 'CANCELLED') DEFAULT 'UPCOMING',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (event_id)
-);
-
-
--- PARTICIPATION TABLE (Junction Table)
-CREATE TABLE participation (
-    student_admission_number VARCHAR(20) NOT NULL,
-    event_id BIGINT NOT NULL,
-    event_description TEXT,
-    participation_status ENUM('REGISTERED', 'ATTEMPTED', 'COMPLETED', 'ABSENT', 'SELECTED', 'REJECTED') DEFAULT 'REGISTERED',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (student_admission_number, event_id),
-    FOREIGN KEY (student_admission_number) 
-        REFERENCES students(student_admission_number)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (event_id) 
-        REFERENCES events(event_id)
-        ON DELETE CASCADE ON UPDATE CASCADE
-);
-
-
--- MESSAGES TABLE
-CREATE TABLE messages (
-    id BIGINT NOT NULL AUTO_INCREMENT,
-    sender_name VARCHAR(255) NOT NULL,
-    sender_email VARCHAR(255) NOT NULL,
-    subject VARCHAR(255) NOT NULL,
-    message TEXT NOT NULL,
-    status VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
-);
-
-
--- Student indexes
-CREATE INDEX idx_student_name ON students(student_first_name, student_last_name);
-CREATE INDEX idx_student_department_cgpa ON students(department, cgpa);
-
--- Event indexes
-CREATE INDEX idx_event_company_status ON events(organizing_company, status);
-CREATE INDEX idx_event_dates ON events(registration_start, registration_end);
-
--- Message indexes
-CREATE INDEX idx_message_sender_date ON messages(sender_email, created_at);
-
--- Participation indexes
-CREATE INDEX idx_participation_student ON participation(student_admission_number);
-CREATE INDEX idx_participation_event ON participation(event_id);
-```
-
 <br>
 
 ---
 
 ## 🚀 Key Features
 
-### 🎓 Student Module
+### Student Module
 - **Profile Management**: Complete academic and personal information
 - **Event Registration**: Register for placement drives
 - **Application Tracking**: Monitor application status
 - **Resume Management**: Google Drive integration for resume storage
 - **Dashboard Analytics**: Performance metrics and progress tracking
 
-### 🏢 Company Module
+### Company Module
 - **Registration & Approval**: Company onboarding workflow
 - **Job Postings**: Create and manage placement opportunities
 - **Candidate Search**: Filter and shortlist eligible students
 - **Event Management**: Schedule and manage placement drives
 
-### 👨‍💼 Admin Module
+### Admin Module
 - **User Management**: Approve/disable student and company accounts
 - **Event Coordination**: Create and manage all placement events
 - **Bulk Operations**: Import/export data via Excel/CSV
 - **Analytics Dashboard**: Placement statistics and reports
 - **System Configuration**: Manage platform settings
 
-### 🔧 Technical Features
+### Technical Features
 - **Role-based Authentication**: Secure access for all user types
 - **RESTful APIs**: Complete CRUD operations for all entities
 - **Excel Processing**: Bulk data import/export functionality
@@ -648,6 +509,7 @@ Placement-Sarthi/
 │       │           └── 📄 ParticipationDTO.java                # DTO for participation data transfer
 │       └── 📁 resources/                                       # Application resources
 │           ├── 📄 application.properties                       # Spring Boot configuration (database, server settings)
+│           ├── 📄 placement_sarathi_database.sql               # Database File
 │           └── 📁 static/                                      # Frontend static assets
 │               ├── 📁 css/                                     # Stylesheets
 │               │   ├── 📄 student_dashboard.css                # Student dashboard styling
@@ -677,42 +539,42 @@ Placement-Sarthi/
 
 ## 📸 Application Screenshots
 
+
 ### 🏠 Home Page
 <p align="center">
-  <img src="screenshots/home-page-1.png" width="45%" alt="Home Page 1"/>
-  <img src="screenshots/home-page-2.png" width="45%" alt="Home Page 2"/>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/homePage1.png" width="85%" alt="Home Page 1"/>
+  <br>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/homePage2.png" width="85%" alt="Home Page 2"/>
+  <br>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/homePage3.png" width="85%" alt="Home Page 3"/>
 </p>
+
+<br>
 
 ### 🔐 Login Page
 <p align="center">
-  <img src="screenshots/login-page.png" width="90%" alt="Login Page"/>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/loginPage.png" width="85%" alt="Login Page"/>
 </p>
+
+<br>
 
 ### 🎓 Student Portal
 <p align="center">
-  <img src="screenshots/student-dashboard.png" width="45%" alt="Student Dashboard"/>
-  <img src="screenshots/student-profile.png" width="45%" alt="Student Profile"/>
-  <br>
-  <img src="screenshots/student-events.png" width="45%" alt="Student Events"/>
-  <img src="screenshots/student-records.png" width="45%" alt="Student Records"/>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/studentPage.png" width="85%" alt="Student Dashboard"/>
 </p>
+
+<br>
 
 ### 🏢 Company Portal
 <p align="center">
-  <img src="screenshots/company-dashboard.png" width="45%" alt="Company Dashboard"/>
-  <img src="screenshots/company-events.png" width="45%" alt="Company Events"/>
-  <br>
-  <img src="screenshots/company-students.png" width="45%" alt="Company Students"/>
-  <img src="screenshots/company-analytics.png" width="45%" alt="Company Analytics"/>
+  <img src="Placement-Sarthi/src/main/resources/previewImages/companyPage.png" width="85%" alt="Company Dashboard"/>
 </p>
+
+<br>
 
 ### 👨‍💼 Admin Portal
 <p align="center">
-  <img src="screenshots/admin-dashboard.png" width="45%" alt="Admin Dashboard"/>
-  <img src="screenshots/admin-users.png" width="45%" alt="Admin User Management"/>
-  <br>
-  <img src="screenshots/admin-events.png" width="45%" alt="Admin Events"/>
-  <img src="screenshots/admin-analytics.png" width="45%" alt="Admin Analytics"/>
+   <img src="Placement-Sarthi/src/main/resources/previewImages/adminPage.png" width="85%" alt="Admin Dashboard"/>
 </p>
 
 <br>
@@ -721,13 +583,14 @@ Placement-Sarthi/
 
 ## 🚀 Quick Start Guide
 
-### 📌 Prerequisites
+### Prerequisites
 - ✅ **Java 17** or higher
 - ✅ **Maven 3.6** or higher
 - ✅ **MySQL 8.0** or higher
 - ✅ **Modern web browser** (Chrome, Firefox, Edge)
 
-### 📥 Installation & Setup
+
+### Installation & Setup
 
 1. **Clone the repository**
    ```bash
@@ -803,13 +666,11 @@ Placement-Sarthi/
 ---
 
 ## 📊 Project Progress & Deliverables
-
-### ✅ Completed Modules (100%)
-- 🎓 **Student Module**: Complete with profile, events, and resume management
-- 🏢 **Company Module**: Full registration and job posting workflow
-- 👨‍💼 **Admin Module**: Comprehensive user and event management
-- 📅 **Event Management**: End-to-end event creation and tracking
-- 📊 **Bulk Operations**: Excel import/export functionality
+- **Student Module**: Complete with profile, events, and resume management
+- **Company Module**: Full registration and job posting workflow
+- **Admin Module**: Comprehensive user and event management
+- **Event Management**: End-to-end event creation and tracking
+- **Bulk Operations**: Excel import/export functionality
 
 
 <br>
@@ -818,14 +679,14 @@ Placement-Sarthi/
 
 ## 🌱 Future Enhancements
 
-- 🔔 **Notification System**: Email/SMS alerts for events and updates
-- 📱 **Mobile Application**: Easy to access Mobile platform app
-- 🎯 **Advanced Analytics**: Machine learning for placement predictions
-- 🔍 **Resume Parser**: Automated extraction of skills and experience
-- 💳 **Interview Scheduling**: Automated calendar integration
-- 📈 **Placement Analytics**: Detailed metrics and reporting dashboard
-- 🤖 **Chatbot Support**: AI-powered assistance for students
-- 🌍 **Multi-language Support**: International student accessibility
+- **Notification System**: Email/SMS alerts for events and updates
+- **Mobile Application**: Easy to access Mobile platform app
+- **Advanced Analytics**: Machine learning for placement predictions
+- **Resume Parser**: Automated extraction of skills and experience
+- **Interview Scheduling**: Automated calendar integration
+- **Placement Analytics**: Detailed metrics and reporting dashboard
+- **Chatbot Support**: AI-powered assistance for students
+- **Multi-language Support**: International student accessibility
 
 <br>
 
@@ -852,16 +713,8 @@ Placement-Sarthi/
 
 <br>
 
----
-
 <div align="center">
 
-## *⭐ Support the Project*
-If you find Placement Sarthi helpful, please consider giving it a star on GitHub!
-
-[![Star on GitHub](https://img.shields.io/github/stars/Abhay-k12/Placement-Portal?style=social)](https://github.com/Abhay-k12/Placement-Portal)
-
-</div>
 
 ---
 
