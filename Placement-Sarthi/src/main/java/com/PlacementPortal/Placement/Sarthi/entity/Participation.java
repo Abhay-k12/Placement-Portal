@@ -1,12 +1,18 @@
 package com.PlacementPortal.Placement.Sarthi.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "participation")
 public class Participation {
 
+    // Getters and Setters
     @EmbeddedId
     private ParticipationId id;
 
@@ -34,33 +40,26 @@ public class Participation {
     private LocalDateTime updatedAt;
 
     // Embedded ID class
+    @Data
+    @NoArgsConstructor
     @Embeddable
     public static class ParticipationId implements java.io.Serializable {
+        // Getters and Setters
         @Column(name = "student_admission_number")
         private String studentAdmissionNumber;
 
         @Column(name = "event_id")
         private Long eventId;
 
-        public ParticipationId() {}
-
         public ParticipationId(String studentAdmissionNumber, Long eventId) {
             this.studentAdmissionNumber = studentAdmissionNumber;
             this.eventId = eventId;
         }
 
-        // Getters and Setters
-        public String getStudentAdmissionNumber() { return studentAdmissionNumber; }
-        public void setStudentAdmissionNumber(String studentAdmissionNumber) { this.studentAdmissionNumber = studentAdmissionNumber; }
-
-        public Long getEventId() { return eventId; }
-        public void setEventId(Long eventId) { this.eventId = eventId; }
-
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof ParticipationId)) return false;
-            ParticipationId that = (ParticipationId) o;
+            if (!(o instanceof ParticipationId that)) return false;
             return studentAdmissionNumber.equals(that.studentAdmissionNumber) &&
                     eventId.equals(that.eventId);
         }
@@ -75,9 +74,6 @@ public class Participation {
     public enum ParticipationStatus {
         REGISTERED, ATTEMPTED, COMPLETED, ABSENT, SELECTED, REJECTED
     }
-
-    // Default constructor
-    public Participation() {}
 
     // Convenience constructor
     public Participation(Student student, Event event, String eventDescription) {
@@ -107,11 +103,7 @@ public class Participation {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    public ParticipationId getId() { return id; }
-    public void setId(ParticipationId id) { this.id = id; }
 
-    public Student getStudent() { return student; }
     public void setStudent(Student student) {
         this.student = student;
         // Update ID when student is set
@@ -121,7 +113,6 @@ public class Participation {
         this.id.setStudentAdmissionNumber(student != null ? student.getStudentAdmissionNumber() : null);
     }
 
-    public Event getEvent() { return event; }
     public void setEvent(Event event) {
         this.event = event;
         // Update ID when event is set
@@ -130,16 +121,4 @@ public class Participation {
         }
         this.id.setEventId(event != null ? event.getEventId() : null);
     }
-
-    public String getEventDescription() { return eventDescription; }
-    public void setEventDescription(String eventDescription) { this.eventDescription = eventDescription; }
-
-    public ParticipationStatus getStatus() { return status; }
-    public void setStatus(ParticipationStatus status) { this.status = status; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
