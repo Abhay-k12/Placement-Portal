@@ -1,12 +1,17 @@
-// src/main/java/com/placementPortal/PlacementSarthi/entity/Event.java
 package com.PlacementPortal.Placement.Sarthi.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "events")
 public class Event {
+    // Getters and Setters
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "event_id")
@@ -62,24 +67,6 @@ public class Event {
         UPCOMING, ONGOING, COMPLETED, CANCELLED
     }
 
-    // Constructors
-    public Event() {}
-
-    public Event(String eventName, String organizingCompany, Double expectedCgpa, String jobRole,
-                 LocalDateTime registrationStart, LocalDateTime registrationEnd, EventMode eventMode,
-                 Double expectedPackage, String eventDescription, String eligibleDepartments) {
-        this.eventName = eventName;
-        this.organizingCompany = organizingCompany;
-        this.expectedCgpa = expectedCgpa;
-        this.jobRole = jobRole;
-        this.registrationStart = registrationStart;
-        this.registrationEnd = registrationEnd;
-        this.eventMode = eventMode;
-        this.expectedPackage = expectedPackage;
-        this.eventDescription = eventDescription;
-        this.eligibleDepartments = eligibleDepartments;
-    }
-
     // PrePersist and PreUpdate methods
     @PrePersist
     protected void onCreate() {
@@ -92,46 +79,4 @@ public class Event {
         updatedAt = LocalDateTime.now();
     }
 
-    // Getters and Setters
-    public Long getEventId() { return eventId; }
-    public void setEventId(Long eventId) { this.eventId = eventId; }
-
-    public String getEventName() { return eventName; }
-    public void setEventName(String eventName) { this.eventName = eventName; }
-
-    public String getOrganizingCompany() { return organizingCompany; }
-    public void setOrganizingCompany(String organizingCompany) { this.organizingCompany = organizingCompany; }
-
-    public Double getExpectedCgpa() { return expectedCgpa; }
-    public void setExpectedCgpa(Double expectedCgpa) { this.expectedCgpa = expectedCgpa; }
-
-    public String getJobRole() { return jobRole; }
-    public void setJobRole(String jobRole) { this.jobRole = jobRole; }
-
-    public LocalDateTime getRegistrationStart() { return registrationStart; }
-    public void setRegistrationStart(LocalDateTime registrationStart) { this.registrationStart = registrationStart; }
-
-    public LocalDateTime getRegistrationEnd() { return registrationEnd; }
-    public void setRegistrationEnd(LocalDateTime registrationEnd) { this.registrationEnd = registrationEnd; }
-
-    public EventMode getEventMode() { return eventMode; }
-    public void setEventMode(EventMode eventMode) { this.eventMode = eventMode; }
-
-    public Double getExpectedPackage() { return expectedPackage; }
-    public void setExpectedPackage(Double expectedPackage) { this.expectedPackage = expectedPackage; }
-
-    public String getEventDescription() { return eventDescription; }
-    public void setEventDescription(String eventDescription) { this.eventDescription = eventDescription; }
-
-    public String getEligibleDepartments() { return eligibleDepartments; }
-    public void setEligibleDepartments(String eligibleDepartments) { this.eligibleDepartments = eligibleDepartments; }
-
-    public EventStatus getStatus() { return status; }
-    public void setStatus(EventStatus status) { this.status = status; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

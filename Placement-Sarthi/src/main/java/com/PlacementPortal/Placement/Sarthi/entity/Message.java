@@ -1,11 +1,17 @@
 package com.PlacementPortal.Placement.Sarthi.entity;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 
+@Data
+@NoArgsConstructor
 @Entity
 @Table(name = "messages")
 public class Message {
+    // Getters and Setters
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,38 +49,4 @@ public class Message {
         updatedAt = LocalDateTime.now();
     }
 
-    // Constructors
-    public Message() {}
-
-    public Message(String senderName, String senderEmail, String subject, String message) {
-        this.senderName = senderName;
-        this.senderEmail = senderEmail;
-        this.subject = subject;
-        this.message = message;
-    }
-
-    // Getters and Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getSenderName() { return senderName; }
-    public void setSenderName(String senderName) { this.senderName = senderName; }
-
-    public String getSenderEmail() { return senderEmail; }
-    public void setSenderEmail(String senderEmail) { this.senderEmail = senderEmail; }
-
-    public String getSubject() { return subject; }
-    public void setSubject(String subject) { this.subject = subject; }
-
-    public String getMessage() { return message; }
-    public void setMessage(String message) { this.message = message; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
-
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }
