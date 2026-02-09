@@ -4,14 +4,14 @@
   🚀 A comprehensive Spring Boot web application that automates and streamlines the entire campus placement process, eliminating manual coordination through a centralized platform for students, companies, and administrators.
 </p>
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"/>
-  <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white"/>
-  <img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/>
-  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"/>
-  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/>
-  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/>
-  <img src="https://img.shields.io/badge/JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white"/>
+<p align="center"> 
+  <img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"/> 
+  <img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white"/> 
+  <img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/> 
+  <img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"/> 
+  <img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/> 
+  <img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/> 
+  <img src="https://img.shields.io/badge/Spring%20Data%20MongoDB-6DB33F?style=for-the-badge&logo=spring&logoColor=white"/> 
 </p>
 
 <br>
@@ -110,7 +110,7 @@ graph TB
     end
     
     subgraph "Data Layer"
-        I --> J[(MySQL Database)]
+        I --> J[(MongoDB Database)]
     end
     
     subgraph "Support Services"
@@ -171,7 +171,7 @@ graph LR
     end
     
     subgraph "Data Layer"
-        S[(MySQL Database)]
+        S[(MongoDB Database)]
     end
     
     A --> D
@@ -266,7 +266,7 @@ graph LR
 
 ## 🗄️ About The Database
 
-Placement Sarthi follows a traditional *RDMS* (Relational database schema), implemented with *SQL* having multiple entities participating in relationships for ensuring scalability, maintainability, and security.
+Placement Sarthi follows a traditional NoSQL Database, implemented with MongoDB having multiple entities participating in relationships for ensuring scalability, maintainability, and security.
 
 ### 🎯VISUAL REPRESENTATION OF ER DIAGRAM
 
@@ -405,52 +405,7 @@ graph LR
 
 ## 🛠️ Tech Stack
 
-<div align="center">
-
-<table>
-<thead>
-<tr>
-<th>🖥️ Technology</th>
-<th>⚙️ Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"/></td>
-<td>Backend framework with embedded Tomcat</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white"/></td>
-<td>Core backend language (Java 17+)</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white"/></td>
-<td>Relational database management</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/Spring%20Data%20JPA-6DB33F?style=for-the-badge&logo=spring&logoColor=white"/></td>
-<td>Database access and ORM</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"/></td>
-<td>Structure of web pages</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/></td>
-<td>Styling web pages</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/></td>
-<td>Client-side interactions</td>
-</tr>
-<tr>
-<td><img src="https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white"/></td>
-<td>Authentication and authorization</td>
-</tr>
-</tbody>
-</table>
-
-</div>
+<div align="center"><table> <thead> <tr> <th>🖥️ Technology</th> <th>⚙️ Description</th> </tr> </thead> <tbody> <tr> <td><img src="https://img.shields.io/badge/Spring%20Boot-6DB33F?style=for-the-badge&logo=springboot&logoColor=white"/></td> <td>Backend framework with embedded Tomcat</td> </tr> <tr> <td><img src="https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=java&logoColor=white"/></td> <td>Core backend language (Java 17+)</td> </tr> <tr> <td><img src="https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white"/></td> <td>NoSQL document database</td> </tr> <tr> <td><img src="https://img.shields.io/badge/Spring%20Data%20MongoDB-6DB33F?style=for-the-badge&logo=spring&logoColor=white"/></td> <td>MongoDB integration and repository abstraction</td> </tr> <tr> <td><img src="https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white"/></td> <td>Structure of web pages</td> </tr> <tr> <td><img src="https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white"/></td> <td>Styling web pages</td> </tr> <tr> <td><img src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black"/></td> <td>Client-side interactions</td> </tr> <tr> <td><img src="https://img.shields.io/badge/Spring%20Security-6DB33F?style=for-the-badge&logo=springsecurity&logoColor=white"/></td> <td>Authentication and authorization</td> </tr> </tbody> </table></div>
 
 <br>
 
@@ -509,7 +464,6 @@ Placement-Sarthi/
 │       │           └── 📄 ParticipationDTO.java                # DTO for participation data transfer
 │       └── 📁 resources/                                       # Application resources
 │           ├── 📄 application.properties                       # Spring Boot configuration (database, server settings)
-│           ├── 📄 placement_sarathi_database.sql               # Database File
 │           └── 📁 static/                                      # Frontend static assets
 │               ├── 📁 css/                                     # Stylesheets
 │               │   ├── 📄 student_dashboard.css                # Student dashboard styling
@@ -599,17 +553,31 @@ Placement-Sarthi/
    ```
 
 2. **Configure database**
-   ```sql
-   CREATE DATABASE IF NOT EXISTS placement_sarthi;
+   ```bash
+     # For Ubuntu/Debian
+    sudo apt-get install mongodb
+    sudo systemctl start mongod
+    
+    # For macOS
+    brew tap mongodb/brew
+    brew install mongodb-community
+    brew services start mongodb-community
+    
+    # For Windows
+    # Download from https://www.mongodb.com/try/download/community
    ```
 
 3. **Update application properties**
    ```properties
-   # src/main/resources/application.properties
-   spring.datasource.url=jdbc:mysql://localhost:3306/placement_portal
-   spring.datasource.username=your-username
-   spring.datasource.password=your-password
-   spring.jpa.hibernate.ddl-auto=update
+    # src/main/resources/application.properties
+    spring.data.mongodb.host=localhost
+    spring.data.mongodb.port=27017
+    spring.data.mongodb.database=placement_sarthi
+    spring.data.mongodb.username=your_usename
+    spring.data.mongodb.password=your_password_here
+    
+    # MongoDB specific properties
+    spring.data.mongodb.auto-index-creation=true
    ```
 
 4. **Build and run the application**
