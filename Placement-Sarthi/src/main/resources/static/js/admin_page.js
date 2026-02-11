@@ -1,8 +1,40 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // Skip authentication check if we're on login page
+// =============================================
+// HELPER: Authenticated fetch wrapper
+// Sends session cookie with every request
+// =============================================
+function apiFetch(url, options = {}) {
+    const defaultOptions = {
+        credentials: 'same-origin',
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        },
+        ...options
+    };
+
+    // Don't set Content-Type for FormData (file uploads)
+    if (options.body instanceof FormData) {
+        delete defaultOptions.headers['Content-Type'];
+    }
+
+    return fetch(url, defaultOptions).then(response => {
+        // If server returns 401, redirect to login
+        if (response.status === 401) {
+            sessionStorage.clear();
+            window.location.href = 'login_page.html';
+            throw new Error('Session expired. Redirecting to login...');
+        }
+        return response;
+    });
+}
+
+// =============================================
+// INITIALIZATION
+// =============================================
+document.addEventListener('DOMContentLoaded', function () {
     const isLoginPage = window.location.pathname.includes('login_page.html') ||
-                        window.location.pathname.includes('index.html') ||
-                        window.location.pathname === '/';
+        window.location.pathname.includes('index.html') ||
+        window.location.pathname === '/';
 
     if (isLoginPage) {
         return;
@@ -11,7 +43,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentUser = sessionStorage.getItem('currentUser');
 
     if (!currentUser) {
-        alert('Please login first');
         window.location.href = 'login_page.html';
         return;
     }
@@ -24,9 +55,38 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
     }
 
-    // Initialize all admin dashboard functionalities
     initializeAdminDashboard();
 });
+
+function initializeAdminDashboard() {
+    loadAdminProfile();
+    initializeProfilePage();
+    loadProfileSettings();
+    setupPageNavigation();
+    loadEventsByTab('upcoming');
+    loadCompanies();
+    setupBulkUpload();
+    setupRegisterButton();
+
+    // Setup profile page click listener
+    const profileLink = document.querySelector('a[onclick*="profile"]');
+    if (profileLink) {
+        profileLink.addEventListener('click', function () {
+            setTimeout(() => {
+                loadAdminProfile();
+                loadProfileSettings();
+            }, 100);
+        });
+    }
+}
+
+// Setup register button
+function setupRegisterButton() {
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', registerStudent);
+    }
+}
 
 // =============================================
 // 1. MESSAGES FUNCTIONALITY
@@ -35,17 +95,14 @@ let currentMessages = [];
 let currentFilter = 'all';
 let selectedMessageId = null;
 
-// Load messages when messages section is shown
 function initializeMessagesSection() {
     loadMessages('all');
 }
 
-// Load messages based on filter
 async function loadMessages(filter = 'all') {
-
     currentFilter = filter;
 
-    // Update active tab
+    // Update active tab styling
     document.querySelectorAll('.msg-tab').forEach(tab => {
         tab.classList.remove('active');
         tab.style.background = 'white';
@@ -65,7 +122,6 @@ async function loadMessages(filter = 'all') {
         activeTab.style.fontWeight = '600';
     }
 
-    // Update title
     const titles = {
         'all': 'All Messages',
         'unread': 'Unread Messages',
@@ -75,20 +131,18 @@ async function loadMessages(filter = 'all') {
     document.getElementById('messagesTitle').textContent = titles[filter] || 'Messages';
 
     try {
-        let url = 'http://localhost:8081/api/messages';
+        let url = '/api/messages';
         if (filter !== 'all') {
-            url = `http://localhost:8081/api/messages/status/${filter}`;
+            url = `/api/messages/status/${filter}`;
         }
 
-        const response = await fetch(url);
-
+        const response = await apiFetch(url);
         const result = await response.json();
 
         if (result.success) {
             currentMessages = result.messages || [];
             renderMessages(currentMessages);
 
-            // Update counts if we loaded all messages
             if (filter === 'all') {
                 updateMessageCounts(result.unreadCount || 0, currentMessages.length);
             }
@@ -98,11 +152,9 @@ async function loadMessages(filter = 'all') {
         }
     } catch (error) {
         console.error('Error loading messages:', error);
-        showAdminMessage('Network error loading messages: ' + error.message, 'error');
     }
 }
 
-// Render messages list
 function renderMessages(messages) {
     const container = document.getElementById('messagesList');
 
@@ -118,7 +170,7 @@ function renderMessages(messages) {
     }
 
     container.innerHTML = messages.map(message => `
-        <div class="message-item" onclick="openMessage(${message.id})"
+        <div class="message-item" onclick="openMessage('${message.id}')"
              style="padding:1.25rem; border:1px solid #e5e7eb; cursor:pointer; transition:all 0.3s ease; border-radius:12px; margin-bottom:1rem; background:white; box-shadow:0 1px 3px rgba(0,0,0,0.05);"
              onmouseover="this.style.background='#f8fafc'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.1)'; this.style.borderColor='#cbd5e1';"
              onmouseout="this.style.background='white'; this.style.transform='translateY(0)'; this.style.boxShadow='0 1px 3px rgba(0,0,0,0.05)'; this.style.borderColor='#e5e7eb';">
@@ -142,12 +194,11 @@ function renderMessages(messages) {
     `).join('');
 }
 
-// Open message details
 async function openMessage(messageId) {
     selectedMessageId = messageId;
 
     try {
-        const response = await fetch(`http://localhost:8081/api/messages/${messageId}`);
+        const response = await apiFetch(`/api/messages/${messageId}`);
         const result = await response.json();
 
         if (result.success) {
@@ -172,9 +223,8 @@ async function openMessage(messageId) {
             `;
             document.getElementById('messageModal').style.display = 'flex';
 
-            // Auto-mark as read if unread
             if (message.status === 'unread') {
-                await updateMessageStatus(messageId, 'read');
+                await updateMessageStatusAPI(messageId, 'read');
             }
         } else {
             showAdminMessage('Failed to load message details', 'error');
@@ -185,27 +235,21 @@ async function openMessage(messageId) {
     }
 }
 
-// Close message modal
 function closeMessage() {
     document.getElementById('messageModal').style.display = 'none';
     selectedMessageId = null;
 }
 
-// Update message status
-async function updateMessageStatus(messageId, status) {
+async function updateMessageStatusAPI(messageId, status) {
     try {
-        const response = await fetch(`http://localhost:8081/api/messages/${messageId}/status`, {
+        const response = await apiFetch(`/api/messages/${messageId}/status`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify({ status })
         });
 
         const result = await response.json();
 
         if (result.success) {
-            // Reload current messages
             loadMessages(currentFilter);
             return true;
         } else {
@@ -219,16 +263,15 @@ async function updateMessageStatus(messageId, status) {
     }
 }
 
-// Message actions
 async function markAsRead() {
-    if (selectedMessageId && await updateMessageStatus(selectedMessageId, 'read')) {
+    if (selectedMessageId && await updateMessageStatusAPI(selectedMessageId, 'read')) {
         closeMessage();
         showAdminMessage('Message marked as read', 'success');
     }
 }
 
 async function archiveMessage() {
-    if (selectedMessageId && await updateMessageStatus(selectedMessageId, 'archived')) {
+    if (selectedMessageId && await updateMessageStatusAPI(selectedMessageId, 'archived')) {
         closeMessage();
         showAdminMessage('Message archived', 'success');
     }
@@ -237,7 +280,7 @@ async function archiveMessage() {
 async function deleteMessage() {
     if (selectedMessageId && confirm('Are you sure you want to delete this message?')) {
         try {
-            const response = await fetch(`http://localhost:8081/api/messages/${selectedMessageId}`, {
+            const response = await apiFetch(`/api/messages/${selectedMessageId}`, {
                 method: 'DELETE'
             });
 
@@ -267,7 +310,6 @@ function replyToMessage() {
     }
 }
 
-// Search messages
 async function searchMessages(query) {
     if (!query.trim()) {
         loadMessages(currentFilter);
@@ -275,7 +317,7 @@ async function searchMessages(query) {
     }
 
     try {
-        const response = await fetch(`http://localhost:8081/api/messages/search?query=${encodeURIComponent(query)}`);
+        const response = await apiFetch(`/api/messages/search?query=${encodeURIComponent(query)}`);
         const result = await response.json();
 
         if (result.success) {
@@ -289,24 +331,27 @@ async function searchMessages(query) {
     }
 }
 
-// Sort messages (placeholder - you can implement sorting logic)
 function sortMessages(criteria) {
-    // Implement sorting based on criteria
     console.log('Sorting by:', criteria);
+    if (criteria === 'all') {
+        loadMessages('all');
+    } else {
+        loadMessages(criteria);
+    }
 }
 
-// Update message counts
 function updateMessageCounts(unreadCount, totalCount) {
-    document.getElementById('unreadCount').textContent = unreadCount;
-    document.getElementById('allCount').textContent = totalCount;
+    const allCountEl = document.getElementById('allCount');
+    const unreadCountEl = document.getElementById('unreadCount');
+    const readCountEl = document.getElementById('readCount');
+    const archivedCountEl = document.getElementById('archivedCount');
 
-    // You might want to fetch read and archived counts separately
-    // For now, we'll set placeholders
-    document.getElementById('readCount').textContent = '0';
-    document.getElementById('archivedCount').textContent = '0';
+    if (allCountEl) allCountEl.textContent = totalCount;
+    if (unreadCountEl) unreadCountEl.textContent = unreadCount;
+    if (readCountEl) readCountEl.textContent = '0';
+    if (archivedCountEl) archivedCountEl.textContent = '0';
 }
 
-// Helper functions
 function formatMessageDate(dateString) {
     const date = new Date(dateString);
     const now = new Date();
@@ -332,64 +377,11 @@ function getStatusStyle(status) {
 }
 
 function showAdminMessage(message, type) {
-    // Simple alert for now - you can implement a better notification system
     alert(`${type.toUpperCase()}: ${message}`);
 }
 
-// Compose new message (placeholder)
 function composeMessage() {
     alert('Compose message functionality would open here');
-}
-
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Skip authentication check if we're on login page
-    const isLoginPage = window.location.pathname.includes('login_page.html') ||
-                        window.location.pathname.includes('index.html') ||
-                        window.location.pathname === '/';
-
-    if (isLoginPage) {
-        return;
-    }
-
-    const currentUser = sessionStorage.getItem('currentUser');
-
-    if (!currentUser) {
-        alert('Please login first');
-        window.location.href = 'login_page.html';
-        return;
-    }
-
-    const user = JSON.parse(currentUser);
-
-    if (user.role !== 'admin') {
-        alert('Access denied. Admin privileges required.');
-        window.location.href = 'login_page.html';
-        return;
-    }
-
-    // Initialize all admin dashboard functionalities
-    initializeAdminDashboard();
-});
-
-function initializeAdminDashboard() {
-    loadAdminProfile();
-    initializeProfilePage();
-    loadProfileSettings();
-    setupPageNavigation();
-    loadEventsByTab('upcoming');
-    loadCompanies();
-
-    // Setup profile page click listener
-    const profileLink = document.querySelector('a[onclick*="profile"]');
-    if (profileLink) {
-        profileLink.addEventListener('click', function() {
-            setTimeout(() => {
-                loadAdminProfile();
-                loadProfileSettings();
-            }, 100);
-        });
-    }
 }
 
 // =============================================
@@ -404,45 +396,46 @@ const pages = {
     'events': document.getElementById('events'),
     'announcements': document.getElementById('announcements'),
     'analytics': document.getElementById('analytics'),
+    'companies': document.getElementById('companies'),
     'settings': document.getElementById('settings')
 };
 
 function showPage(pageId) {
-    // Hide all pages
     Object.values(pages).forEach(page => {
         if (page) page.style.display = 'none';
     });
 
-    // Remove active class from all sidebar links
     document.querySelectorAll('aside .sidebar a').forEach(link => {
         link.classList.remove('active');
     });
 
-    // Show selected page
     if (pages[pageId]) {
         pages[pageId].style.display = 'block';
 
-        // Initialize specific sections when shown
         if (pageId === 'messages') {
             initializeMessagesSection();
         } else if (pageId === 'events') {
-            initializeEventsSection();
+            loadEventsByTab('upcoming');
         } else if (pageId === 'profile') {
-            loadProfileSection();
+            loadAdminProfile();
+            loadProfileSettings();
+        } else if (pageId === 'companies') {
+            loadCompanies();
         }
-        // Add other sections as needed
     }
 }
 
 function setupPageNavigation() {
-    // Initialize page
     showPage('dashboard');
 }
 
-// Profile API functions
+// =============================================
+// 3. ADMIN PROFILE MANAGEMENT
+// =============================================
+
 async function fetchAdminProfile(adminId) {
     try {
-        const response = await fetch(`http://localhost:8081/api/admins/${adminId}`);
+        const response = await apiFetch(`/api/admins/${adminId}`);
         if (response.ok) {
             const result = await response.json();
             if (result.success) {
@@ -457,16 +450,13 @@ async function fetchAdminProfile(adminId) {
     }
 }
 
-async function updateAdminProfile(profileData) {
+async function updateAdminProfileAPI(profileData) {
     try {
         const currentUser = sessionStorage.getItem('currentUser');
         const user = JSON.parse(currentUser);
 
-        const response = await fetch(`http://localhost:8081/api/admins/${user.id}/update`, {
+        const response = await apiFetch(`/api/admins/${user.id}/update`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(profileData)
         });
 
@@ -483,16 +473,13 @@ async function updateAdminProfile(profileData) {
     }
 }
 
-async function changeAdminPassword(passwordData) {
+async function changeAdminPasswordAPI(passwordData) {
     try {
         const currentUser = sessionStorage.getItem('currentUser');
         const user = JSON.parse(currentUser);
 
-        const response = await fetch(`http://localhost:8081/api/admins/${user.id}/change-password`, {
+        const response = await apiFetch(`/api/admins/${user.id}/change-password`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(passwordData)
         });
 
@@ -509,7 +496,6 @@ async function changeAdminPassword(passwordData) {
     }
 }
 
-// Profile UI functions
 async function loadAdminProfile() {
     const currentUser = sessionStorage.getItem('currentUser');
 
@@ -551,21 +537,19 @@ async function loadAdminProfile() {
         updateDetailItem('College', 'Graphic Era Hill University, Dehradun');
         updateDetailItem('City', adminData.city || 'Not specified');
 
-        // Update profile page
         updateProfileForm(adminData);
 
     } catch (error) {
         console.error('Error loading admin profile:', error);
-        const user = JSON.parse(currentUser);
-        if (user.adminData) {
-            loadStoredAdminData(user.adminData);
-            updateProfileForm(user.adminData);
+        const userData = JSON.parse(currentUser);
+        if (userData.adminData) {
+            loadStoredAdminData(userData.adminData);
+            updateProfileForm(userData.adminData);
         }
     }
 }
 
 function updateProfileForm(adminData) {
-    // Update profile overview section
     const profileName = document.getElementById('profileName');
     const profileEmailDisplay = document.getElementById('profileEmailDisplay');
     const profilePhoneDisplay = document.getElementById('profilePhoneDisplay');
@@ -576,13 +560,11 @@ function updateProfileForm(adminData) {
     if (profilePhoneDisplay) profilePhoneDisplay.textContent = adminData.phoneNumber || 'Not specified';
     if (profileLocationDisplay) profileLocationDisplay.textContent = adminData.city || 'Not specified';
 
-    // Update admin ID
     const adminIdElement = document.querySelector('#profileInfo p:nth-child(2)');
     if (adminIdElement && adminData.adminId) {
         adminIdElement.textContent = `Admin ID: ADM-${adminData.adminId}`;
     }
 
-    // Update edit form fields
     const fullName = document.getElementById('fullName');
     const email = document.getElementById('email');
     const phone = document.getElementById('phone');
@@ -595,7 +577,6 @@ function updateProfileForm(adminData) {
     if (city) city.value = adminData.city || '';
     if (department_edit) department_edit.value = adminData.department || '';
 
-    // Update last login time
     const lastLoginElement = document.querySelector('#profileInfo p:last-child');
     if (lastLoginElement) {
         const now = new Date();
@@ -625,7 +606,6 @@ function loadStoredAdminData(adminData) {
     updateDetailItem('City', adminData.city || 'Not specified');
 }
 
-// Profile helper functions
 function updateProfileElement(selector, value) {
     const element = document.querySelector(selector);
     if (element) {
@@ -660,39 +640,36 @@ function formatDate(dateString) {
     }
 }
 
-// Profile event handlers
+// =============================================
+// 3b. PROFILE EVENT HANDLERS
+// =============================================
+
 function initializeProfilePage() {
-    // Save Profile Button
     const saveProfileBtn = document.getElementById('saveProfileBtn');
     if (saveProfileBtn) {
         saveProfileBtn.addEventListener('click', handleProfileSave);
     }
 
-    // Cancel Profile Button
     const cancelProfileBtn = document.getElementById('cancelProfileBtn');
     if (cancelProfileBtn) {
         cancelProfileBtn.addEventListener('click', handleProfileCancel);
     }
 
-    // Change Password Button
     const changePasswordBtn = document.getElementById('changePasswordBtn');
     if (changePasswordBtn) {
         changePasswordBtn.addEventListener('click', handlePasswordChange);
     }
 
-    // Save Settings Button
     const saveSettingsBtn = document.getElementById('saveSettingsBtn');
     if (saveSettingsBtn) {
         saveSettingsBtn.addEventListener('click', handleSettingsSave);
     }
 
-    // Reset Defaults Button
     const resetDefaultsBtn = document.getElementById('resetDefaultsBtn');
     if (resetDefaultsBtn) {
         resetDefaultsBtn.addEventListener('click', handleResetDefaults);
     }
 
-    // Photo Upload
     const photoUploadBtn = document.getElementById('photoUploadBtn');
     const photoUpload = document.getElementById('photoUpload');
     if (photoUploadBtn && photoUpload) {
@@ -719,7 +696,6 @@ async function handleProfileSave() {
             department: document.getElementById('department_edit').value.trim()
         };
 
-        // Validation
         if (!profileData.adminName) {
             alert('Please enter your full name');
             return;
@@ -730,7 +706,7 @@ async function handleProfileSave() {
             return;
         }
 
-        const result = await updateAdminProfile(profileData);
+        const result = await updateAdminProfileAPI(profileData);
 
         if (result.success) {
             const currentUser = sessionStorage.getItem('currentUser');
@@ -789,7 +765,7 @@ async function handlePasswordChange() {
             newPassword: newPassword
         };
 
-        const result = await changeAdminPassword(passwordData);
+        const result = await changeAdminPasswordAPI(passwordData);
 
         if (result.success) {
             alert('Password changed successfully!');
@@ -841,7 +817,7 @@ function handlePhotoUpload(event) {
     }
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = function (e) {
         const profileImage = document.getElementById('profileImage');
         if (profileImage) {
             profileImage.src = e.target.result;
@@ -876,13 +852,13 @@ function loadProfileSettings() {
 // 4. STUDENT REGISTRATION MANAGEMENT
 // =============================================
 
-// Individual Student Registration
 async function registerStudent() {
     const requiredFields = ['admissionNumber', 'firstName', 'lastName'];
     const missingFields = [];
 
     requiredFields.forEach(field => {
-        const value = document.getElementById(field).value.trim();
+        const el = document.getElementById(field);
+        const value = el ? el.value.trim() : '';
         if (!value) {
             missingFields.push(field);
         }
@@ -919,8 +895,8 @@ async function registerStudent() {
         course: document.getElementById('course').value || null,
         studentUniversityRollNo: document.getElementById('universityRollNo').value.trim() || null,
         studentEnrollmentNo: document.getElementById('enrollmentNo').value.trim() || null,
-        resumeLink: document.getElementById('resume').files[0] ? 'resume_uploaded' : null,
-        photographLink: document.getElementById('photograph').files[0] ? 'photo_uploaded' : null
+        resumeLink: null,
+        photographLink: null
     };
 
     // Validation
@@ -965,11 +941,8 @@ async function registerStudent() {
     registerBtn.disabled = true;
 
     try {
-        const response = await fetch('http://localhost:8081/api/students/register', {
+        const response = await apiFetch('/api/students/register', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(studentData)
         });
 
@@ -981,10 +954,17 @@ async function registerStudent() {
         const result = await response.json();
         alert('Student registered successfully!');
 
-        const registrationForm = document.getElementById('registrationForm');
-        if (registrationForm) {
-            registrationForm.reset();
-        }
+        // Reset form fields
+        const formFields = [
+            'admissionNumber', 'firstName', 'lastName', 'fatherName', 'motherName',
+            'dateOfBirth', 'gender', 'mobileNo', 'emailId', 'collegeEmailId',
+            'department', 'batch', 'cgpa', 'tenthPercentage', 'twelfthPercentage',
+            'backLogsCount', 'address', 'course', 'universityRollNo', 'enrollmentNo'
+        ];
+        formFields.forEach(fieldId => {
+            const el = document.getElementById(fieldId);
+            if (el) el.value = '';
+        });
 
     } catch (error) {
         console.error('Full error details:', error);
@@ -995,13 +975,16 @@ async function registerStudent() {
     }
 }
 
-// Bulk Student Upload
+// =============================================
+// 5. BULK UPLOAD
+// =============================================
+
 function setupBulkUpload() {
     const fileInput = document.getElementById('bulkFileInput');
     const uploadArea = document.getElementById('uploadArea');
 
     if (fileInput) {
-        fileInput.addEventListener('change', function(e) {
+        fileInput.addEventListener('change', function (e) {
             if (e.target.files.length > 0) {
                 const file = e.target.files[0];
                 displaySelectedFile(file);
@@ -1015,19 +998,19 @@ function setupBulkUpload() {
 }
 
 function setupDragAndDrop(uploadArea, fileInput) {
-    uploadArea.addEventListener('dragover', function(e) {
+    uploadArea.addEventListener('dragover', function (e) {
         e.preventDefault();
         uploadArea.style.background = '#f8fafc';
         uploadArea.style.borderColor = '#3b82f6';
     });
 
-    uploadArea.addEventListener('dragleave', function(e) {
+    uploadArea.addEventListener('dragleave', function (e) {
         e.preventDefault();
         uploadArea.style.background = '';
         uploadArea.style.borderColor = '';
     });
 
-    uploadArea.addEventListener('drop', function(e) {
+    uploadArea.addEventListener('drop', function (e) {
         e.preventDefault();
         uploadArea.style.background = '';
         uploadArea.style.borderColor = '';
@@ -1095,15 +1078,18 @@ async function handleBulkUpload() {
     showMessage('Processing file...', 'info');
 
     const uploadBtn = document.querySelector('button[onclick="handleUploadProcess()"]');
-    const originalText = uploadBtn.textContent;
-    uploadBtn.textContent = 'Processing...';
-    uploadBtn.disabled = true;
+    let originalText = '';
+    if (uploadBtn) {
+        originalText = uploadBtn.textContent;
+        uploadBtn.textContent = 'Processing...';
+        uploadBtn.disabled = true;
+    }
 
     try {
         const formData = new FormData();
         formData.append('file', file);
 
-        const response = await fetch('/api/students/bulk-upload', {
+        const response = await apiFetch('/api/students/bulk-upload', {
             method: 'POST',
             body: formData
         });
@@ -1146,9 +1132,9 @@ function showUploadResult(result) {
                     ${result.errors.map(error => `
                         <div style="padding:0.5rem; border-bottom:1px solid #fecaca;">
                             <strong style="color:#dc2626;">Row ${error.row}:</strong> ${Object.entries(error)
-                                .filter(([key]) => key !== 'row')
-                                .map(([field, msg]) => `<span style="color:#7f1d1d;">${field}: ${msg}</span>`)
-                                .join(', ')}
+            .filter(([key]) => key !== 'row')
+            .map(([field, msg]) => `<span style="color:#7f1d1d;">${field}: ${msg}</span>`)
+            .join(', ')}
                         </div>
                     `).join('')}
                 </div>
@@ -1193,8 +1179,10 @@ function downloadTemplate() {
     }, 1500);
 }
 
+// =============================================
+// 6. EVENTS MANAGEMENT
+// =============================================
 
-// Event Tab Management
 async function switchEventTab(button, tabType) {
     const tabs = document.querySelectorAll('.event-tab');
     tabs.forEach(tab => {
@@ -1223,8 +1211,7 @@ async function loadEventsByTab(tabType) {
         };
 
         const url = urlMap[tabType] || '/api/events';
-
-        const response = await fetch(url);
+        const response = await apiFetch(url);
 
         if (response.ok) {
             const events = await response.json();
@@ -1240,19 +1227,11 @@ async function loadEventsByTab(tabType) {
 
 async function loadAllEventsAndFilter(tabType) {
     try {
-        const response = await fetch('/api/events');
+        const response = await apiFetch('/api/events');
         if (response.ok) {
             const allEvents = await response.json();
             const filteredEvents = filterEventsByDate(allEvents, tabType);
             updateEventCards(filteredEvents);
-
-            const eventCards = document.getElementById('eventCards');
-            if (eventCards && eventCards.querySelector('.event-card')) {
-                const infoDiv = document.createElement('div');
-                infoDiv.style.cssText = 'background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 1rem; margin-bottom: 1rem;';
-                infoDiv.innerHTML = `<strong>Info:</strong> Showing ${filteredEvents.length} ${tabType} events (using client-side filtering)`;
-                eventCards.insertBefore(infoDiv, eventCards.firstChild);
-            }
         } else {
             throw new Error('Failed to load events');
         }
@@ -1273,7 +1252,7 @@ function filterEventsByDate(events, tabType) {
         const startDate = new Date(regStart.getFullYear(), regStart.getMonth(), regStart.getDate());
         const endDate = new Date(regEnd.getFullYear(), regEnd.getMonth(), regEnd.getDate());
 
-        switch(tabType) {
+        switch (tabType) {
             case 'upcoming':
                 return startDate > today;
             case 'ongoing':
@@ -1299,7 +1278,6 @@ function showNoEventsMessage(tabType) {
     }
 }
 
-// Event Form Management
 function showEventForm() {
     const form = document.getElementById('event-creation-form');
     const eventCards = document.getElementById('eventCards');
@@ -1338,10 +1316,9 @@ async function submitEventForm() {
         eventMode: document.getElementById('eventMode').value.toUpperCase(),
         expectedPackage: parseFloat(document.getElementById('expectedPackage').value) || null,
         eventDescription: document.getElementById('eventDescription').value.trim(),
-        eligibleDepartments: selectedDepartments ? JSON.stringify(selectedDepartments) : null
+        eligibleDepartments: selectedDepartments || null
     };
 
-    // Validation
     if (!eventData.eventName || !eventData.organizingCompany || !eventData.registrationStart ||
         !eventData.registrationEnd || !eventData.eventDescription) {
         alert('Please fill in all required fields');
@@ -1357,23 +1334,20 @@ async function submitEventForm() {
     }
 
     try {
-        const response = await fetch('http://localhost:8081/api/events/create', {
+        const response = await apiFetch('/api/events/create', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(eventData)
         });
 
         if (response.ok) {
-            const createdEvent = await response.json();
             alert('Event created successfully!');
             closeEventForm();
 
             const activeTab = document.querySelector('.event-tab[style*="background: linear-gradient"]');
             if (activeTab) {
-                const tabType = activeTab.textContent.toLowerCase().includes('upcoming') ? 'upcoming' :
-                              activeTab.textContent.toLowerCase().includes('ongoing') ? 'ongoing' : 'past';
+                const tabText = activeTab.textContent.toLowerCase().trim();
+                const tabType = tabText.includes('upcoming') ? 'upcoming' :
+                    tabText.includes('ongoing') ? 'ongoing' : 'past';
                 await loadEventsByTab(tabType);
             } else {
                 await loadEventsByTab('upcoming');
@@ -1394,7 +1368,6 @@ function getSelectedDepartments() {
     return departments.length > 0 ? departments : null;
 }
 
-// Event Cards Management
 function updateEventCards(events) {
     const eventCardsContainer = document.getElementById('eventCards');
     if (!eventCardsContainer) return;
@@ -1421,11 +1394,11 @@ function createEventCard(event) {
     const card = document.createElement('div');
     card.className = 'event-card';
     card.style = 'background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s ease;';
-    card.onmouseover = function() {
+    card.onmouseover = function () {
         this.style.transform = 'translateY(-4px)';
         this.style.boxShadow = '0 8px 20px rgba(0,0,0,0.12)';
     };
-    card.onmouseout = function() {
+    card.onmouseout = function () {
         this.style.transform = 'translateY(0)';
         this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
     };
@@ -1450,6 +1423,7 @@ function createEventCard(event) {
     }
 
     const companyInitial = event.organizingCompany.charAt(0).toUpperCase();
+    const safeEventId = String(event.eventId).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
     card.innerHTML = `
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -1471,19 +1445,18 @@ function createEventCard(event) {
             <p style="margin: 0; color: #374151; font-size: 0.875rem;"><strong>Package:</strong> ${event.expectedPackage ? '₹' + event.expectedPackage + ' LPA' : 'Not specified'}</p>
         </div>
         <div style="display: flex; gap: 0.5rem;">
-            <button onclick="viewEvent(${event.eventId})" style="flex: 1; background: #3b82f6; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">View</button>
-            <button onclick="editEvent(${event.eventId})" style="flex: 1; background: #f59e0b; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Edit</button>
-            <button onclick="manageStudents(${event.eventId})" style="flex: 1; background: #10b981; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Manage</button>
+            <button onclick="viewEvent('${safeEventId}')" style="flex: 1; background: #3b82f6; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">View</button>
+            <button onclick="editEvent('${safeEventId}')" style="flex: 1; background: #f59e0b; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Edit</button>
+            <button onclick="manageStudents('${safeEventId}')" style="flex: 1; background: #10b981; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Manage</button>
         </div>
     `;
 
     return card;
 }
 
-// Event Action Functions
 async function viewEvent(eventId) {
     try {
-        const response = await fetch(`http://localhost:8081/api/events/${eventId}`);
+        const response = await apiFetch(`/api/events/${eventId}`);
         if (response.ok) {
             const event = await response.json();
             alert(`Event Details:\nName: ${event.eventName}\nCompany: ${event.organizingCompany}\nDescription: ${event.eventDescription}`);
@@ -1493,15 +1466,10 @@ async function viewEvent(eventId) {
     }
 }
 
-async function editEvent(eventId) {
+function editEvent(eventId) {
     alert('Edit event with ID: ' + eventId);
 }
 
-async function manageStudents(eventId) {
-    alert('Manage students for event ID: ' + eventId);
-}
-
-// Event Search and Filter
 function searchEvents(query) {
     const cards = document.querySelectorAll('.event-card');
     cards.forEach(card => {
@@ -1530,14 +1498,29 @@ function filterEventsByCompany(company) {
     });
 }
 
+// =============================================
+// 7. COMPANY MANAGEMENT
+// =============================================
 
-// Company Tab Management
+async function loadCompanies() {
+    try {
+        const response = await apiFetch('/api/companies');
+        if (response.ok) {
+            const companies = await response.json();
+            updateCompanyTable(companies);
+        }
+    } catch (error) {
+        console.error('Error loading companies:', error);
+    }
+}
+
 function switchCompanyTab(button, tabType) {
     const tabs = document.querySelectorAll('.company-tab');
     tabs.forEach(tab => {
         tab.style.background = 'transparent';
         tab.style.color = '#64748b';
         tab.style.fontWeight = '500';
+        tab.style.boxShadow = 'none';
     });
 
     button.style.background = 'white';
@@ -1548,7 +1531,7 @@ function switchCompanyTab(button, tabType) {
     const tabContents = document.querySelectorAll('.company-tab-content');
     tabContents.forEach(tab => tab.style.display = 'none');
 
-    switch(tabType) {
+    switch (tabType) {
         case 'directory':
             document.getElementById('company-directory').style.display = 'block';
             loadCompanies();
@@ -1566,19 +1549,6 @@ function switchCompanyTab(button, tabType) {
     }
 }
 
-// Company Data Management
-async function loadCompanies() {
-    try {
-        const response = await fetch('http://localhost:8081/api/companies');
-        if (response.ok) {
-            const companies = await response.json();
-            updateCompanyTable(companies);
-        }
-    } catch (error) {
-        console.error('Error loading companies:', error);
-    }
-}
-
 function updateCompanyTable(companies) {
     const tableBody = document.querySelector('#company-directory tbody');
     if (!tableBody) return;
@@ -1588,10 +1558,11 @@ function updateCompanyTable(companies) {
     companies.forEach(company => {
         const row = document.createElement('tr');
         row.style.transition = 'all 0.2s ease';
-        row.onmouseover = function() { this.style.background = '#f8fafc'; };
-        row.onmouseout = function() { this.style.background = 'white'; };
+        row.onmouseover = function () { this.style.background = '#f8fafc'; };
+        row.onmouseout = function () { this.style.background = 'white'; };
 
         const companyInitial = company.companyName.charAt(0).toUpperCase();
+        const safeCompanyId = String(company.companyId).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
         row.innerHTML = `
             <td style="padding:1rem; border-bottom:1px solid #f1f5f9;">
@@ -1614,9 +1585,9 @@ function updateCompanyTable(companies) {
             </td>
             <td style="padding:1rem; border-bottom:1px solid #f1f5f9;">
                 <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
-                    <button onclick="viewCompanyDetails('${company.companyId}')" style="background:#3b82f6; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="View Details">View</button>
-                    <button onclick="editCompany('${company.companyId}')" style="background:#f59e0b; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="Edit">Edit</button>
-                    <button onclick="terminateCompany('${company.companyId}')" style="background:#dc2626; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="Terminate Access">Terminate</button>
+                    <button onclick="viewCompanyDetails('${safeCompanyId}')" style="background:#3b82f6; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="View Details">View</button>
+                    <button onclick="editCompany('${safeCompanyId}')" style="background:#f59e0b; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="Edit">Edit</button>
+                    <button onclick="terminateCompany('${safeCompanyId}')" style="background:#dc2626; color:white; padding:0.25rem 0.5rem; border:none; border-radius:4px; cursor:pointer; font-size:0.7rem; font-weight:500; white-space:nowrap;" title="Terminate Access">Terminate</button>
                 </div>
             </td>
         `;
@@ -1656,17 +1627,14 @@ async function submitCompanyForm() {
     }
 
     try {
-        const response = await fetch('http://localhost:8081/api/companies/create', {
+        const response = await apiFetch('/api/companies/create', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
             body: JSON.stringify(companyData)
         });
 
         if (response.ok) {
             const createdCompany = await response.json();
-            alert(`Company created successfully!\n\nCompany ID: ${createdCompany.companyId}\nPassword: ${createdCompany.password}\n\nPlease note these credentials for future reference.`);
+            alert(`Company created successfully!\n\nCompany ID: ${createdCompany.companyId}\nPassword: ${companyData.password}\n\nPlease note these credentials for future reference.`);
             resetCompanyForm();
             switchCompanyTab(document.querySelector('.company-tab[onclick*="directory"]'), 'directory');
         } else {
@@ -1684,13 +1652,14 @@ async function submitCompanyForm() {
 }
 
 function resetCompanyForm() {
-    document.getElementById('addCompanyForm').reset();
+    const form = document.getElementById('addCompanyForm');
+    if (form) form.reset();
 }
 
 async function terminateCompany(companyId) {
     if (confirm('Are you sure you want to terminate this company\'s access? This action cannot be undone.')) {
         try {
-            const response = await fetch(`http://localhost:8081/api/companies/${companyId}`, {
+            const response = await apiFetch(`/api/companies/${companyId}`, {
                 method: 'DELETE'
             });
 
@@ -1709,8 +1678,8 @@ async function terminateCompany(companyId) {
 
 async function loadCompanyDrives() {
     try {
-        const eventsResponse = await fetch('http://localhost:8081/api/events');
-        const companiesResponse = await fetch('http://localhost:8081/api/companies');
+        const eventsResponse = await apiFetch('/api/events');
+        const companiesResponse = await apiFetch('/api/companies');
 
         if (!eventsResponse.ok || !companiesResponse.ok) {
             throw new Error('Failed to load data');
@@ -1756,8 +1725,8 @@ function updateDrivesTable(events, companyNames) {
     events.forEach(event => {
         const row = document.createElement('tr');
         row.style.transition = 'all 0.2s ease';
-        row.onmouseover = function() { this.style.background = '#f8fafc'; };
-        row.onmouseout = function() { this.style.background = 'white'; };
+        row.onmouseover = function () { this.style.background = '#f8fafc'; };
+        row.onmouseout = function () { this.style.background = 'white'; };
 
         const companyExists = companyNames.has(event.organizingCompany);
         const companyNote = companyExists ? '' : '<div style="font-size:0.7rem; color:#dc2626; margin-top:2px;">* External Source</div>';
@@ -1818,13 +1787,36 @@ function searchCompanies(query) {
     });
 }
 
-// Company Action Functions
+function filterCompaniesByIndustry(industry) {
+    console.log('Filter by industry:', industry);
+}
+
+function filterCompaniesByStatus(status) {
+    console.log('Filter by status:', status);
+}
+
+function exportCompanyList() {
+    alert('Export company list functionality');
+}
+
 function viewCompanyDetails(companyId) {
     alert('View details for company: ' + companyId);
 }
 
 function editCompany(companyId) {
     alert('Edit company: ' + companyId);
+}
+
+function toggleCompanyStatus(companyName) {
+    alert('Toggle status for: ' + companyName);
+}
+
+function approveCompany(companyName) {
+    alert('Approve company: ' + companyName);
+}
+
+function rejectCompany(companyName) {
+    alert('Reject company: ' + companyName);
 }
 
 function createNewDrive() {
@@ -1843,12 +1835,66 @@ function viewResults(driveId) {
     alert('View results for drive: ' + driveId);
 }
 
+// =============================================
+// 8. ANALYTICS PLACEHOLDERS
+// =============================================
 
-// Message Display
+function filterAnalyticsByYear(year) {
+    console.log('Filter analytics by year:', year);
+}
+
+function filterAnalyticsByBranch(branch) {
+    console.log('Filter analytics by branch:', branch);
+}
+
+function exportAnalyticsReport() {
+    alert('Export analytics report');
+}
+
+function exportReport(format) {
+    alert('Export report as ' + format);
+}
+
+function exportCompanyReport(format) {
+    alert('Export company report as ' + format);
+}
+
+function shareReport() {
+    alert('Share report functionality');
+}
+
+function showPlacementDetails() {
+    alert('Show placement details');
+}
+
+function showOfferDetails() {
+    alert('Show offer details');
+}
+
+function showPackageDetails() {
+    alert('Show package details');
+}
+
+function showTopOffers() {
+    alert('Show top offers');
+}
+
+function showCompanyStats() {
+    alert('Show company stats');
+}
+
+function showYearlyComparison() {
+    alert('Show yearly comparison');
+}
+
+// =============================================
+// 9. UTILITY FUNCTIONS
+// =============================================
+
 function showMessage(message, type = 'info') {
     const messageContainer = document.getElementById('messageContainer');
     if (!messageContainer) {
-        console.error('Message container not found');
+        console.log(`[${type.toUpperCase()}] ${message}`);
         return;
     }
 
@@ -1872,9 +1918,15 @@ function showMessage(message, type = 'info') {
     `;
 
     messageContainer.appendChild(messageDiv);
+
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (messageDiv.parentNode === messageContainer) {
+            messageContainer.removeChild(messageDiv);
+        }
+    }, 5000);
 }
 
-// Validation Functions
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -1885,7 +1937,6 @@ function isValidMobile(mobile) {
     return mobileRegex.test(mobile);
 }
 
-// Statistics Update
 function updateStatistics(newRegistrations) {
     if (!newRegistrations || newRegistrations === 0) return;
 
@@ -1901,7 +1952,10 @@ function updateStatistics(newRegistrations) {
     }
 }
 
-// Tab Switching Functions
+// =============================================
+// 10. TAB SWITCHING
+// =============================================
+
 function showTab(tabId, button) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -1919,24 +1973,27 @@ function showTab(tabId, button) {
     }
 }
 
-window.switchTab = function(btn, type) {
-    document.querySelectorAll('.msg-tab').forEach(tab => {
-        tab.classList.remove('active');
-        tab.style.background = 'white';
-        tab.style.color = '#6b7280';
-    });
-    btn.classList.add('active');
-    btn.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
-    btn.style.color = 'white';
+// =============================================
+// 11. GLOBAL SEARCH
+// =============================================
+
+function globalSearch(event) {
+    if (event) event.preventDefault();
+    const query = document.getElementById('globalSearchInput').value.trim();
+    if (!query) return;
+    alert('Search for: ' + query + '\n\nGlobal search functionality coming soon.');
 }
 
-// Mobile Menu
-document.addEventListener('DOMContentLoaded', function() {
+// =============================================
+// 12. MOBILE MENU
+// =============================================
+
+document.addEventListener('DOMContentLoaded', function () {
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
     const mobileMenu = document.getElementById('mobile-menu');
-    if(mobileMenuBtn && mobileMenu) {
+    if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', () => {
-            if(mobileMenu.style.display === 'none' || !mobileMenu.style.display) {
+            if (mobileMenu.style.display === 'none' || !mobileMenu.style.display) {
                 mobileMenu.style.display = 'block';
             } else {
                 mobileMenu.style.display = 'none';
@@ -1945,20 +2002,32 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Logout Function
+// =============================================
+// 13. LOGOUT
+// =============================================
+
 function logoutAdmin() {
     if (confirm('Are you sure you want to logout?')) {
-        sessionStorage.clear();
-        localStorage.clear();
-        window.location.href = 'login_page.html';
+        apiFetch('/api/logout', { method: 'POST' })
+            .then(() => {
+                sessionStorage.clear();
+                localStorage.removeItem('adminSettings');
+                localStorage.removeItem('adminProfileImage');
+                window.location.href = 'login_page.html';
+            })
+            .catch(() => {
+                // Even if server logout fails, clear local and redirect
+                sessionStorage.clear();
+                localStorage.removeItem('adminSettings');
+                localStorage.removeItem('adminProfileImage');
+                window.location.href = 'login_page.html';
+            });
     }
 }
 
-// Form Handlers
-function handleFormSubmit(event) {
-    event.preventDefault();
-    registerStudent();
-}
+// =============================================
+// 14. FORM HANDLERS (called from HTML onclick)
+// =============================================
 
 function handleChooseFile() {
     const fileInput = document.getElementById('bulkFileInput');
@@ -1977,11 +2046,7 @@ function handleDownloadTemplate() {
     downloadTemplate();
 }
 
-function initializeBulkUploadTab() {
-    setupBulkUpload();
+function handleFormSubmit(event) {
+    event.preventDefault();
+    registerStudent();
 }
-
-// Initialize bulk upload when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    setupBulkUpload();
-});

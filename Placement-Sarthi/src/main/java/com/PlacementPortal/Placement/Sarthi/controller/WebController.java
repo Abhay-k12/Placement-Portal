@@ -11,9 +11,8 @@ public class WebController {
         return "forward:/index.html";
     }
 
-    // Optional: Add other page mappings if needed
     @GetMapping("/admin")
     public String admin() {
-        return "forward:/admin_page.html";
+        return "forward:/original-admin.html";
     }
 }

@@ -1,11 +1,12 @@
 package com.PlacementPortal.Placement.Sarthi.service;
 
+import com.PlacementPortal.Placement.Sarthi.entity.Gender;
 import com.PlacementPortal.Placement.Sarthi.entity.Student;
-import com.PlacementPortal.Placement.Sarthi.entity.Gender; // Updated import for separate Gender enum
 import com.PlacementPortal.Placement.Sarthi.repository.StudentRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +22,11 @@ public class ExcelProcessingService {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private static final String DEFAULT_PASSWORD = "gehu@123";
 
     public Map<String, Object> processBulkUpload(MultipartFile file) {
         Map<String, Object> result = new HashMap<>();
@@ -119,7 +125,6 @@ public class ExcelProcessingService {
             }
         }
 
-        // If mandatory fields are missing, add row number and return
         if (!errors.isEmpty()) {
             errors.put("row", String.valueOf(rowNum));
         }
@@ -160,156 +165,10 @@ public class ExcelProcessingService {
         student.setStudentUniversityRollNo(getStringCellValue(row.getCell(20)));
         student.setStudentEnrollmentNo(getStringCellValue(row.getCell(21)));
 
-        // Set default password
-        student.setPassword("gehu@123");
+        // Set default password - HASHED with BCrypt
+        student.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
 
         return student;
-    }
-
-    private LocalDate getLocalDateCellValue(Cell cell) {
-        if (cell == null) return null;
-
-        try {
-            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
-                // Convert java.util.Date to LocalDate
-                Date date = cell.getDateCellValue();
-                return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-            } else if (cell.getCellType() == CellType.STRING) {
-                // Try to parse string date (yyyy-mm-dd format)
-                String dateString = cell.getStringCellValue().trim();
-                if (!dateString.isEmpty()) {
-                    return LocalDate.parse(dateString);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error parsing date at cell: " + e.getMessage());
-        }
-        return null;
-    }
-
-    private Gender getGenderCellValue(Cell cell) {
-        if (cell == null) return null;
-
-        String genderValue = getStringCellValue(cell);
-        if (genderValue != null) {
-            try {
-                // Convert string to enum - using the separate Gender enum
-                // The enum values remain the same: Male, Female, Others
-                return Gender.valueOf(genderValue.trim());
-            } catch (IllegalArgumentException e) {
-                // Handle case variations
-                String normalized = genderValue.trim();
-                if (normalized.equalsIgnoreCase("male")) {
-                    return Gender.Male;
-                } else if (normalized.equalsIgnoreCase("female")) {
-                    return Gender.Female;
-                } else if (normalized.equalsIgnoreCase("others") || normalized.equalsIgnoreCase("other")) {
-                    return Gender.Others;
-                }
-            }
-        }
-        return null;
-    }
-
-    private boolean isValidGender(String genderValue) {
-        if (genderValue == null) return false;
-
-        String normalized = genderValue.trim();
-        return normalized.equalsIgnoreCase("male") ||
-                normalized.equalsIgnoreCase("female") ||
-                normalized.equalsIgnoreCase("others") ||
-                normalized.equalsIgnoreCase("other");
-    }
-
-    private boolean isRowEmpty(Row row) {
-        if (row == null) return true;
-
-        for (int i = 0; i < row.getLastCellNum(); i++) {
-            Cell cell = row.getCell(i);
-            if (cell != null && cell.getCellType() != CellType.BLANK) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isCellEmpty(Cell cell) {
-        if (cell == null) return true;
-
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim().isEmpty();
-            case NUMERIC:
-                return false;
-            case BOOLEAN:
-                return false;
-            case FORMULA:
-                return false;
-            default:
-                return true;
-        }
-    }
-
-    private String getStringCellValue(Cell cell) {
-        if (cell == null) return null;
-
-        switch (cell.getCellType()) {
-            case STRING:
-                return cell.getStringCellValue().trim();
-            case NUMERIC:
-                // For numeric cells that should be treated as strings (like phone numbers, admission numbers)
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getDateCellValue().toString();
-                } else {
-                    double numericValue = cell.getNumericCellValue();
-                    // Check if it's an integer value (like admission number, phone number)
-                    if (numericValue == Math.floor(numericValue)) {
-                        return String.valueOf((long) numericValue);
-                    } else {
-                        return String.valueOf(numericValue);
-                    }
-                }
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            default:
-                return null;
-        }
-    }
-
-    private Double getNumericCellValue(Cell cell) {
-        if (cell == null) return null;
-
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return cell.getNumericCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String stringValue = cell.getStringCellValue().trim();
-                if (!stringValue.isEmpty()) {
-                    return Double.parseDouble(stringValue);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error parsing numeric value: " + e.getMessage());
-        }
-        return null;
-    }
-
-    private Integer getIntegerCellValue(Cell cell) {
-        if (cell == null) return null;
-
-        try {
-            if (cell.getCellType() == CellType.NUMERIC) {
-                return (int) cell.getNumericCellValue();
-            } else if (cell.getCellType() == CellType.STRING) {
-                String stringValue = cell.getStringCellValue().trim();
-                if (!stringValue.isEmpty()) {
-                    return Integer.parseInt(stringValue);
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Error parsing integer value: " + e.getMessage());
-        }
-        return null;
     }
 
     public byte[] generateTemplate() throws IOException {
@@ -373,5 +232,139 @@ public class ExcelProcessingService {
             workbook.write(outputStream);
             return outputStream.toByteArray();
         }
+    }
+
+    // ===== HELPER METHODS =====
+
+    private LocalDate getLocalDateCellValue(Cell cell) {
+        if (cell == null) return null;
+
+        try {
+            if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+                Date date = cell.getDateCellValue();
+                return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+            } else if (cell.getCellType() == CellType.STRING) {
+                String dateString = cell.getStringCellValue().trim();
+                if (!dateString.isEmpty()) {
+                    return LocalDate.parse(dateString);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing date at cell: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Gender getGenderCellValue(Cell cell) {
+        if (cell == null) return null;
+
+        String genderValue = getStringCellValue(cell);
+        if (genderValue != null) {
+            String normalized = genderValue.trim().toLowerCase();
+            if (normalized.equals("male")) {
+                return Gender.Male;
+            } else if (normalized.equals("female")) {
+                return Gender.Female;
+            } else if (normalized.equals("others") || normalized.equals("other")) {
+                return Gender.Others;
+            }
+        }
+        return null;
+    }
+
+    private boolean isValidGender(String genderValue) {
+        if (genderValue == null) return false;
+        String normalized = genderValue.trim().toLowerCase();
+        return normalized.equals("male") || normalized.equals("female") ||
+                normalized.equals("others") || normalized.equals("other");
+    }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) return true;
+
+        for (int i = 0; i < row.getLastCellNum(); i++) {
+            Cell cell = row.getCell(i);
+            if (cell != null && cell.getCellType() != CellType.BLANK) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean isCellEmpty(Cell cell) {
+        if (cell == null) return true;
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim().isEmpty();
+            case NUMERIC:
+                return false;
+            case BOOLEAN:
+                return false;
+            case FORMULA:
+                return false;
+            default:
+                return true;
+        }
+    }
+
+    private String getStringCellValue(Cell cell) {
+        if (cell == null) return null;
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getDateCellValue().toString();
+                } else {
+                    double numericValue = cell.getNumericCellValue();
+                    if (numericValue == Math.floor(numericValue)) {
+                        return String.valueOf((long) numericValue);
+                    } else {
+                        return String.valueOf(numericValue);
+                    }
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return null;
+        }
+    }
+
+    private Double getNumericCellValue(Cell cell) {
+        if (cell == null) return null;
+
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return cell.getNumericCellValue();
+            } else if (cell.getCellType() == CellType.STRING) {
+                String stringValue = cell.getStringCellValue().trim();
+                if (!stringValue.isEmpty()) {
+                    return Double.parseDouble(stringValue);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing numeric value: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Integer getIntegerCellValue(Cell cell) {
+        if (cell == null) return null;
+
+        try {
+            if (cell.getCellType() == CellType.NUMERIC) {
+                return (int) cell.getNumericCellValue();
+            } else if (cell.getCellType() == CellType.STRING) {
+                String stringValue = cell.getStringCellValue().trim();
+                if (!stringValue.isEmpty()) {
+                    return Integer.parseInt(stringValue);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing integer value: " + e.getMessage());
+        }
+        return null;
     }
 }

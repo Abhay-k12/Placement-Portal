@@ -16,7 +16,6 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/students")
-@CrossOrigin(origins = "*")
 public class StudentController {
 
     @Autowired
@@ -25,23 +24,20 @@ public class StudentController {
     @Autowired
     private ExcelProcessingService excelProcessingService;
 
-    // Existing individual registration endpoint
+    // Admin registers student - default password "gehu@123" is set in StudentService
     @PostMapping("/register")
     public ResponseEntity<?> registerStudent(@RequestBody Student student) {
         try {
-            System.out.println("Received student data: " + student.toString());
-
             Student registeredStudent = studentService.registerStudent(student);
             return ResponseEntity.status(HttpStatus.CREATED).body(registeredStudent);
-
         } catch (RuntimeException e) {
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(e.getMessage());
-
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", e.getMessage()
+            ));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Internal server error: " + e.getMessage());
+                    .body(Map.of("success", false, "message", "Internal server error: " + e.getMessage()));
         }
     }
 
@@ -50,29 +46,21 @@ public class StudentController {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please select a file to upload"
-                ));
+                        "success", false, "message", "Please select a file to upload"));
             }
 
-            // Validate file type
             String fileName = file.getOriginalFilename();
             if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls") && !fileName.endsWith(".csv"))) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please upload an Excel file (.xlsx, .xls) or CSV file"
-                ));
+                        "success", false, "message", "Please upload an Excel file (.xlsx, .xls) or CSV file"));
             }
 
             Map<String, Object> result = excelProcessingService.processBulkUpload(file);
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                    "success", false,
-                    "message", "Error processing file: " + e.getMessage()
-            ));
+                    "success", false, "message", "Error processing file: " + e.getMessage()));
         }
     }
 
@@ -80,34 +68,28 @@ public class StudentController {
     public ResponseEntity<byte[]> downloadStudentTemplate() {
         try {
             byte[] templateData = excelProcessingService.generateTemplate();
-
             return ResponseEntity.ok()
                     .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     .header("Content-Disposition", "attachment; filename=\"student_bulk_upload_template.xlsx\"")
                     .body(templateData);
-
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
-    // Keep your existing endpoints as they are
     @GetMapping
     public ResponseEntity<List<Student>> getAllStudents() {
-        List<Student> students = studentService.getAllStudents();
-        return ResponseEntity.ok(students);
+        return ResponseEntity.ok(studentService.getAllStudents());
     }
 
     @GetMapping("/{admissionNumber}")
     public ResponseEntity<?> getStudent(@PathVariable String admissionNumber) {
-        Optional<Student> student = Optional.ofNullable(studentService.getStudentByAdmissionNumber(admissionNumber));
-        if (student.isPresent()) {
-            return ResponseEntity.ok(student.get());
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body("Student not found with admission number: " + admissionNumber);
+        Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
+        if (student != null) {
+            return ResponseEntity.ok(student);
         }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body("Student not found with admission number: " + admissionNumber);
     }
 
     @PutMapping("/{admissionNumber}")
@@ -130,95 +112,47 @@ public class StudentController {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<Map<String, Object>> loginStudent(@RequestBody Map<String, String> loginData) {
+    // Student changes own password
+    @PostMapping("/{admissionNumber}/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(
+            @PathVariable String admissionNumber,
+            @RequestBody Map<String, String> passwordData) {
         try {
-            // Check if request body is null
-            if (loginData == null) {
+            String currentPassword = passwordData.get("currentPassword");
+            String newPassword = passwordData.get("newPassword");
+
+            if (currentPassword == null || newPassword == null) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
-                        "message", "Login data is required"
+                        "message", "Current password and new password are required"
                 ));
             }
 
-            String studentId = loginData.get("userId");
-            String password = loginData.get("password");
-
-            System.out.println("Received - Student ID: " + studentId + ", Password: " + password);
-
-            // Check if required fields are present
-            if (studentId == null || studentId.trim().isEmpty()) {
+            if (newPassword.length() < 6) {
                 return ResponseEntity.badRequest().body(Map.of(
                         "success", false,
-                        "message", "Student ID is required"
+                        "message", "New password must be at least 6 characters"
                 ));
             }
 
-            if (password == null || password.trim().isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Password is required"
+            boolean success = studentService.changePassword(admissionNumber, currentPassword, newPassword);
+
+            if (success) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Password changed successfully"
                 ));
-            }
-
-            // Trim the inputs
-            studentId = studentId.trim();
-            password = password.trim();
-
-            // Find student by admission number (student ID)
-            Student student = studentService.getStudentByAdmissionNumber(studentId);
-
-            if (student == null) {
+            } else {
                 return ResponseEntity.status(401).body(Map.of(
                         "success", false,
-                        "message", "Student not found"
+                        "message", "Current password is incorrect"
                 ));
             }
-
-            // Check if password field exists and is not null
-            if (student.getPassword() == null) {
-                return ResponseEntity.status(401).body(Map.of(
-                        "success", false,
-                        "message", "Student account not properly configured - missing password"
-                ));
-            }
-
-            if (!student.getPassword().equals(password)) {
-                return ResponseEntity.status(401).body(Map.of(
-                        "success", false,
-                        "message", "Invalid password"
-                ));
-            }
-
-            // Login successful - return user data using HashMap to avoid null issues
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("studentAdmissionNumber", student.getStudentAdmissionNumber() != null ? student.getStudentAdmissionNumber() : "");
-            userData.put("studentFirstName", student.getStudentFirstName() != null ? student.getStudentFirstName() : "");
-            userData.put("studentLastName", student.getStudentLastName() != null ? student.getStudentLastName() : "");
-            userData.put("emailId", student.getEmailId() != null ? student.getEmailId() : "");
-            userData.put("department", student.getDepartment() != null ? student.getDepartment() : "");
-            userData.put("mobileNo", student.getMobileNo() != null ? student.getMobileNo() : "");
-            userData.put("dateOfBirth", student.getDateOfBirth() != null ? student.getDateOfBirth().toString() : "");
-            userData.put("photographLink", student.getPhotographLink() != null ? student.getPhotographLink() : "");
-            userData.put("studentUniversityRollNo", student.getStudentUniversityRollNo() != null ? student.getStudentUniversityRollNo() : "");
-            userData.put("cgpa", student.getCgpa() != null ? student.getCgpa() : "");
-            userData.put("batch", student.getBatch() != null ? student.getBatch() : "");
-            userData.put("course", student.getCourse() != null ? student.getCourse() : "");
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", "Login successful",
-                    "user", userData
-            ));
-
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                     "success", false,
-                    "message", "Login failed: " + (e.getMessage() != null ? e.getMessage() : "Unknown error")
+                    "message", "Error changing password: " + e.getMessage()
             ));
-        } finally {
-            System.out.println("STUDENT LOGIN END");
         }
     }
 
@@ -230,21 +164,15 @@ public class StudentController {
 
             if (student == null) {
                 return ResponseEntity.status(404).body(Map.of(
-                        "success", false,
-                        "message", "Student not found"
-                ));
+                        "success", false, "message", "Student not found"));
             }
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "message", "Password reset link sent to your registered email"
-            ));
-
+                    "message", "Password reset link sent to your registered email"));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
-                    "success", false,
-                    "message", "Failed to process request"
-            ));
+                    "success", false, "message", "Failed to process request"));
         }
     }
 
@@ -252,39 +180,27 @@ public class StudentController {
     public ResponseEntity<Map<String, Object>> uploadResume(
             @PathVariable String admissionNumber,
             @RequestParam("resume") MultipartFile file) {
-
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please select a file to upload"
-                ));
+                        "success", false, "message", "Please select a file to upload"));
             }
 
-            // Validate file type
             String contentType = file.getContentType();
             if (!"application/pdf".equals(contentType) &&
                     !"application/msword".equals(contentType) &&
                     !"application/vnd.openxmlformats-officedocument.wordprocessingml.document".equals(contentType)) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please upload a PDF or Word document"
-                ));
+                        "success", false, "message", "Please upload a PDF or Word document"));
             }
 
-            // Validate file size (5MB)
             if (file.getSize() > 5 * 1024 * 1024) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "File size should be less than 5MB"
-                ));
+                        "success", false, "message", "File size should be less than 5MB"));
             }
 
-            // In a real implementation, you would save the file to cloud storage or server
-            // and return the file URL. For now, we'll simulate this.
             String resumeLink = "/uploads/resumes/" + admissionNumber + "_" + file.getOriginalFilename();
 
-            // Update student's resume link in database
             Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
             if (student != null) {
                 student.setResumeLink(resumeLink);
@@ -294,15 +210,10 @@ public class StudentController {
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Resume uploaded successfully",
-                    "resumeLink", resumeLink
-            ));
-
+                    "resumeLink", resumeLink));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
-                    "success", false,
-                    "message", "Failed to upload resume: " + e.getMessage()
-            ));
+                    "success", false, "message", "Failed to upload resume: " + e.getMessage()));
         }
     }
 
@@ -312,12 +223,10 @@ public class StudentController {
             @RequestParam(required = false) Double minCgpa,
             @RequestParam(required = false) Integer maxBacklogs,
             @RequestParam(required = false) String batch) {
-
         try {
             List<Student> filteredStudents = studentService.filterStudents(department, minCgpa, maxBacklogs, batch);
             return ResponseEntity.ok(filteredStudents);
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
@@ -328,108 +237,75 @@ public class StudentController {
             @RequestParam(required = false) Double minCgpa,
             @RequestParam(required = false) Integer maxBacklogs,
             @RequestParam(required = false) String batch) {
-
         try {
             byte[] excelData = studentService.exportFilteredStudents(department, minCgpa, maxBacklogs, batch);
-
             return ResponseEntity.ok()
                     .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     .header("Content-Disposition", "attachment; filename=\"filtered_students.xlsx\"")
                     .body(excelData);
-
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
-    // Add these methods to your existing StudentController
 
     @PostMapping("/{admissionNumber}/resume-drive-link")
     public ResponseEntity<Map<String, Object>> updateResumeDriveLink(
             @PathVariable String admissionNumber,
             @RequestBody Map<String, String> request) {
-
         try {
             String driveLink = request.get("driveLink");
 
             if (driveLink == null || driveLink.trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Drive link is required"
-                ));
+                        "success", false, "message", "Drive link is required"));
             }
 
-            // Validate Google Drive link format
             if (!isValidDriveLink(driveLink)) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please provide a valid Google Drive shareable link"
-                ));
+                        "success", false, "message", "Please provide a valid Google Drive shareable link"));
             }
 
             Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
             if (student == null) {
                 return ResponseEntity.status(404).body(Map.of(
-                        "success", false,
-                        "message", "Student not found"
-                ));
+                        "success", false, "message", "Student not found"));
             }
 
-            // Use the existing resume_link column
             student.setResumeLink(driveLink);
             studentService.updateStudent(admissionNumber, student);
 
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Resume drive link updated successfully",
-                    "resumeLink", driveLink
-            ));
-
+                    "resumeLink", driveLink));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
-                    "success", false,
-                    "message", "Failed to update resume link: " + e.getMessage()
-            ));
+                    "success", false, "message", "Failed to update resume link: " + e.getMessage()));
         }
     }
 
     @GetMapping("/{admissionNumber}/resume-drive-link")
-    public ResponseEntity<Map<String, Object>> getResumeDriveLink(
-            @PathVariable String admissionNumber) {
-
+    public ResponseEntity<Map<String, Object>> getResumeDriveLink(@PathVariable String admissionNumber) {
         try {
             Student student = studentService.getStudentByAdmissionNumber(admissionNumber);
             if (student == null) {
                 return ResponseEntity.status(404).body(Map.of(
-                        "success", false,
-                        "message", "Student not found"
-                ));
+                        "success", false, "message", "Student not found"));
             }
 
             String resumeLink = student.getResumeLink();
-
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "resumeLink", resumeLink != null ? resumeLink : "",
-                    "hasResume", resumeLink != null && !resumeLink.trim().isEmpty()
-            ));
-
+                    "hasResume", resumeLink != null && !resumeLink.trim().isEmpty()));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
-                    "success", false,
-                    "message", "Failed to get resume link: " + e.getMessage()
-            ));
+                    "success", false, "message", "Failed to get resume link: " + e.getMessage()));
         }
     }
 
-    // Helper method to validate Google Drive links
     private boolean isValidDriveLink(String link) {
         if (link == null) return false;
-
-        // Basic validation for Google Drive links
         return link.matches("^https://drive\\.google\\.com/.*") ||
                 link.matches("^https://docs\\.google\\.com/.*") ||
                 link.startsWith("https://") && link.contains("drive.google.com");
