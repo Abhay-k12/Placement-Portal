@@ -1,62 +1,49 @@
 package com.PlacementPortal.Placement.Sarthi.entity;
 
-import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
 @Data
 @NoArgsConstructor
-@Entity
-@Table(name = "admins")
+@Document(collection = "admins")
 public class Admin {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "admin_id")
-    private Long adminId;
+    private String adminId;
 
-    @Column(name = "admin_name", nullable = false)
     private String adminName;
 
-    @Column(name = "email_address", nullable = false, unique = true)
+    @Indexed(unique = true)
     private String emailAddress;
 
-    @Column(name = "phone_number")
     private String phoneNumber;
 
-    @Column(name = "city")
     private String city;
 
-    @Column(name = "department")
     private String department;
 
-    @Column(name = "date_of_birth")
     private LocalDate dateOfBirth;
 
-    @Column(name = "last_login")
     private LocalDateTime lastLogin;
 
-    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // PrePersist and PreUpdate methods
-    @PrePersist
-    protected void onCreate() {
+    public void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
 }
