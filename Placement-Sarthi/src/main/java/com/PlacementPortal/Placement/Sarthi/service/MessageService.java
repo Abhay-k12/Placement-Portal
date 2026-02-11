@@ -2,7 +2,6 @@ package com.PlacementPortal.Placement.Sarthi.service;
 
 import com.PlacementPortal.Placement.Sarthi.entity.Message;
 import com.PlacementPortal.Placement.Sarthi.repository.MessageRepository;
-import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +15,7 @@ public class MessageService {
     private MessageRepository messageRepository;
 
     public Message saveMessage(Message message) {
+        message.onCreate();
         return messageRepository.save(message);
     }
 
@@ -32,17 +32,21 @@ public class MessageService {
                 query, query, query);
     }
 
-    public Optional<Message> getMessageById(Long id) {
+    public Optional<Message> getMessageById(String id) {
         return messageRepository.findById(id);
     }
 
-    @Transactional
-    public void updateMessageStatus(Long id, String status) {
-        messageRepository.updateStatus(id, status);
+    public void updateMessageStatus(String id, String status) {
+        Optional<Message> messageOpt = messageRepository.findById(id);
+        if (messageOpt.isPresent()) {
+            Message message = messageOpt.get();
+            message.setStatus(status);
+            message.onUpdate();
+            messageRepository.save(message);
+        }
     }
 
-    @Transactional
-    public void deleteMessage(Long id) {
+    public void deleteMessage(String id) {
         messageRepository.deleteById(id);
     }
 
