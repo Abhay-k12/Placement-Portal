@@ -7,11 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/events")
-@CrossOrigin(origins = "http://localhost:8081")
 public class EventController {
 
     @Autowired
@@ -19,76 +17,63 @@ public class EventController {
 
     @PostMapping("/create")
     public ResponseEntity<Event> createEvent(@RequestBody Event event) {
-        Event createdEvent = eventService.createEvent(event);
-        return ResponseEntity.ok(createdEvent);
+        return ResponseEntity.ok(eventService.createEvent(event));
     }
 
     @GetMapping
     public ResponseEntity<List<Event>> getAllEvents() {
-        List<Event> events = eventService.getAllEvents();
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getAllEvents());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Event> getEventById(@PathVariable Long id) {
+    public ResponseEntity<Event> getEventById(@PathVariable String id) {
         Event event = eventService.getEventById(id);
-        if (event != null) {
-            return ResponseEntity.ok(event);
-        }
+        if (event != null) return ResponseEntity.ok(event);
         return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Event> updateEvent(@PathVariable Long id, @RequestBody Event eventDetails) {
+    public ResponseEntity<Event> updateEvent(@PathVariable String id, @RequestBody Event eventDetails) {
         Event updatedEvent = eventService.updateEvent(id, eventDetails);
-        if (updatedEvent != null) {
-            return ResponseEntity.ok(updatedEvent);
-        }
+        if (updatedEvent != null) return ResponseEntity.ok(updatedEvent);
         return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEvent(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteEvent(@PathVariable String id) {
         eventService.deleteEvent(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/status/{status}")
     public ResponseEntity<List<Event>> getEventsByStatus(@PathVariable Event.EventStatus status) {
-        List<Event> events = eventService.getEventsByStatus(status);
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getEventsByStatus(status));
     }
 
     @GetMapping("/search")
     public ResponseEntity<List<Event>> searchEventsByCompany(@RequestParam String company) {
-        List<Event> events = eventService.searchEventsByCompany(company);
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.searchEventsByCompany(company));
     }
 
     @GetMapping("/upcoming")
     public ResponseEntity<List<Event>> getUpcomingEvents() {
-        List<Event> events = eventService.getUpcomingEvents();
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getUpcomingEvents());
     }
 
     @GetMapping("/ongoing")
     public ResponseEntity<List<Event>> getOngoingEvents() {
-        List<Event> events = eventService.getOngoingEvents();
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getOngoingEvents());
     }
 
     @GetMapping("/past")
     public ResponseEntity<List<Event>> getPastEvents() {
-        List<Event> events = eventService.getPastEvents();
-        return ResponseEntity.ok(events);
+        return ResponseEntity.ok(eventService.getPastEvents());
     }
 
-    // Get events by company name
     @GetMapping("/company/{companyName}")
     public ResponseEntity<List<Event>> getEventsByCompany(@PathVariable String companyName) {
         try {
-            List<Event> events = eventService.getEventsByCompany(companyName);
-            return ResponseEntity.ok(events);
+            return ResponseEntity.ok(eventService.getEventsByCompany(companyName));
         } catch (Exception e) {
             return ResponseEntity.status(500).body(null);
         }

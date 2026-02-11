@@ -7,13 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/bulk-operations")
-@CrossOrigin(origins = "http://localhost:8081")
 public class BulkOperationsController {
 
     @Autowired
@@ -24,24 +22,17 @@ public class BulkOperationsController {
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Please select a file"
-                ));
+                        "success", false, "message", "Please select a file"));
             }
 
             List<String> admissionNumbers = bulkOperationsService.extractAdmissionNumbersFromExcel(file);
-
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "admissionNumbers", admissionNumbers,
-                    "count", admissionNumbers.size()
-            ));
-
+                    "count", admissionNumbers.size()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Error processing file: " + e.getMessage()
-            ));
+                    "success", false, "message", "Error processing file: " + e.getMessage()));
         }
     }
 
@@ -51,30 +42,18 @@ public class BulkOperationsController {
         try {
             if (request.getStudentAdmissionNumbers() == null || request.getStudentAdmissionNumbers().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "No students selected"
-                ));
+                        "success", false, "message", "No students selected"));
             }
-
             if (request.getOaLink() == null || request.getOaLink().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "OA link is required"
-                ));
+                        "success", false, "message", "OA link is required"));
             }
 
             String result = bulkOperationsService.sendOALinks(request, companyName);
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", result
-            ));
-
+            return ResponseEntity.ok(Map.of("success", true, "message", result));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Error sending OA links: " + e.getMessage()
-            ));
+                    "success", false, "message", "Error sending OA links: " + e.getMessage()));
         }
     }
 
@@ -84,30 +63,18 @@ public class BulkOperationsController {
         try {
             if (request.getStudentAdmissionNumbers() == null || request.getStudentAdmissionNumbers().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "No students selected"
-                ));
+                        "success", false, "message", "No students selected"));
             }
-
             if (request.getOaLink() == null || request.getOaLink().trim().isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of(
-                        "success", false,
-                        "message", "Interview link/venue is required"
-                ));
+                        "success", false, "message", "Interview link/venue is required"));
             }
 
             String result = bulkOperationsService.scheduleInterviews(request, companyName);
-
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "message", result
-            ));
-
+            return ResponseEntity.ok(Map.of("success", true, "message", result));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "message", "Error scheduling interviews: " + e.getMessage()
-            ));
+                    "success", false, "message", "Error scheduling interviews: " + e.getMessage()));
         }
     }
 }
