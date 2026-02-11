@@ -1,27 +1,22 @@
 package com.PlacementPortal.Placement.Sarthi.repository;
 
 import com.PlacementPortal.Placement.Sarthi.entity.Participation;
-import com.PlacementPortal.Placement.Sarthi.entity.Student;
-import com.PlacementPortal.Placement.Sarthi.entity.Event;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ParticipationRepository extends JpaRepository<Participation, Participation.ParticipationId> {
+public interface ParticipationRepository extends MongoRepository<Participation, String> {
 
-    boolean existsByStudentAndEvent(Student student, Event event);
+    boolean existsByStudentAdmissionNumberAndEventId(String studentAdmissionNumber, String eventId);
 
-    List<Participation> findByStudent_StudentAdmissionNumber(String admissionNumber);
+    List<Participation> findByStudentAdmissionNumber(String admissionNumber);
 
-    List<Participation> findByEvent_EventId(Long eventId);
+    List<Participation> findByEventId(String eventId);
 
-    @Query("SELECT p FROM Participation p WHERE p.event.organizingCompany = :companyName")
-    List<Participation> findByCompanyName(@Param("companyName") String companyName);
+    List<Participation> findByOrganizingCompany(String companyName);
 
-    Optional<Participation> findByStudent_StudentAdmissionNumberAndEvent_EventId(String admissionNumber, Long eventId);
+    Optional<Participation> findByStudentAdmissionNumberAndEventId(String admissionNumber, String eventId);
 }
