@@ -1,4 +1,236 @@
 // =============================================
+// MODAL NOTIFICATION SYSTEM
+// =============================================
+
+(function injectModalStyles() {
+    if (document.getElementById('adminModalStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'adminModalStyles';
+    style.textContent = `
+        @keyframes adminModalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes adminModalSlideIn {
+            from { transform: translateY(-20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+
+function showNotification(message, type = 'info', duration = 4000) {
+    let container = document.getElementById('adminToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'adminToastContainer';
+        container.style.cssText = 'position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:0.75rem; max-width:420px;';
+        document.body.appendChild(container);
+    }
+
+    const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+    const bgColors = {
+        success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        warning: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        info: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+    };
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: ${bgColors[type] || bgColors.info}; color: white;
+        padding: 1rem 1.25rem; border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        display: flex; align-items: center; gap: 0.75rem;
+        transform: translateX(120%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 500;
+        cursor: pointer;
+    `;
+
+    toast.innerHTML = `
+        <span class="material-symbols-outlined" style="font-size:1.25rem; flex-shrink:0;">${icons[type] || icons.info}</span>
+        <span style="flex:1;">${message}</span>
+        <button style="background:none; border:none; color:white; cursor:pointer; font-size:1.25rem; padding:0; opacity:0.8; flex-shrink:0;" onclick="this.parentElement.remove()">×</button>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+
+    const timeout = setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, duration);
+
+    toast.addEventListener('click', () => {
+        clearTimeout(timeout);
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    });
+}
+
+function showAlertModal(message, title = 'Notice', type = 'info') {
+    return new Promise(resolve => {
+        const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+        const iconColors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+
+        const overlay = document.createElement('div');
+        overlay.id = 'adminAlertModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:${iconColors[type] || iconColors.info}15;
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:${iconColors[type] || iconColors.info};">${icons[type] || icons.info}</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:2rem; white-space:pre-wrap;">${message}</div>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button id="adminAlertOkBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                        color: white; padding: 0.75rem 2rem; border: none; border-radius: 10px;
+                        font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.2s ease;">OK</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const okBtn = document.getElementById('adminAlertOkBtn');
+        const close = () => { overlay.remove(); resolve(); };
+        okBtn.addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Enter' || e.key === 'Escape') { document.removeEventListener('keydown', handler); close(); }
+        });
+        okBtn.focus();
+    });
+}
+
+// Confirm modal — replaces confirm(), returns Promise<boolean>
+function showConfirmModal(message, title = 'Confirm Action', type = 'warning') {
+    return new Promise(resolve => {
+        const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info', danger: 'dangerous' };
+        const iconColors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6', danger: '#ef4444' };
+
+        const confirmBtnBg = (type === 'danger' || type === 'error')
+            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+            : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'adminConfirmModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 480px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:${iconColors[type] || iconColors.warning}15;
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:${iconColors[type] || iconColors.warning};">${icons[type] || icons.warning}</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:2rem; white-space:pre-wrap;">${message}</div>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <button id="adminConfirmCancelBtn" style="background: #f1f5f9; color: #64748b; padding: 0.75rem 1.5rem;
+                        border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;">Cancel</button>
+                    <button id="adminConfirmOkBtn" style="background: ${confirmBtnBg}; color: white; padding: 0.75rem 1.5rem;
+                        border: none; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3);">Confirm</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const okBtn = document.getElementById('adminConfirmOkBtn');
+        const cancelBtn = document.getElementById('adminConfirmCancelBtn');
+        const close = (result) => { overlay.remove(); resolve(result); };
+        okBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(false); }
+            if (e.key === 'Enter') { document.removeEventListener('keydown', handler); close(true); }
+        });
+        okBtn.focus();
+    });
+}
+
+function showPromptModal(message, title = 'Input Required', defaultValue = '', inputType = 'text') {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.id = 'adminPromptModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:rgba(59,130,246,0.1);
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:#3b82f6;">edit</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:1rem;">${message}</div>
+                <input id="adminPromptInput" type="${inputType}" value="${defaultValue}" style="
+                    width: 100%; padding: 0.875rem 1rem; border: 2px solid #e5e7eb; border-radius: 10px;
+                    font-size: 0.9rem; outline: none; transition: all 0.2s ease;
+                    font-family: 'Inter', sans-serif; margin-bottom: 1.5rem; box-sizing: border-box;
+                " onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.1)';"
+                  onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';" />
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <button id="adminPromptCancelBtn" style="background: #f1f5f9; color: #64748b; padding: 0.75rem 1.5rem;
+                        border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;">Cancel</button>
+                    <button id="adminPromptOkBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                        color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 10px;
+                        font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3);">Submit</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const input = document.getElementById('adminPromptInput');
+        const okBtn = document.getElementById('adminPromptOkBtn');
+        const cancelBtn = document.getElementById('adminPromptCancelBtn');
+        const close = (value) => { overlay.remove(); resolve(value); };
+        okBtn.addEventListener('click', () => close(input.value));
+        cancelBtn.addEventListener('click', () => close(null));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') close(input.value); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(null); }
+        });
+        input.focus();
+        input.select();
+    });
+}
+
+
+// =============================================
 // HELPER: Authenticated fetch wrapper
 // Sends session cookie with every request
 // =============================================
@@ -31,7 +263,7 @@ function apiFetch(url, options = {}) {
 // =============================================
 // INITIALIZATION
 // =============================================
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const isLoginPage = window.location.pathname.includes('login_page.html') ||
         window.location.pathname.includes('index.html') ||
         window.location.pathname === '/';
@@ -50,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const user = JSON.parse(currentUser);
 
     if (user.role !== 'admin') {
-        alert('Access denied. Admin privileges required.');
+        await showAlertModal('Access denied. Admin privileges required.');
         window.location.href = 'login_page.html';
         return;
     }
@@ -278,7 +510,7 @@ async function archiveMessage() {
 }
 
 async function deleteMessage() {
-    if (selectedMessageId && confirm('Are you sure you want to delete this message?')) {
+    if (selectedMessageId && await showConfirmModal('Are you sure you want to delete this message?')) {
         try {
             const response = await apiFetch(`/api/messages/${selectedMessageId}`, {
                 method: 'DELETE'
@@ -376,12 +608,12 @@ function getStatusStyle(status) {
     return styles[status] || styles.read;
 }
 
-function showAdminMessage(message, type) {
-    alert(`${type.toUpperCase()}: ${message}`);
+async function showAdminMessage(message, type) {
+    await showAlertModal(`${type.toUpperCase()}: ${message}`, 'Notice', type);
 }
 
-function composeMessage() {
-    alert('Compose message functionality would open here');
+async function composeMessage() {
+    await showAlertModal('Compose message functionality would open here');
 }
 
 // =============================================
@@ -697,12 +929,12 @@ async function handleProfileSave() {
         };
 
         if (!profileData.adminName) {
-            alert('Please enter your full name');
+            await showAlertModal('Please enter your full name');
             return;
         }
 
         if (!profileData.emailAddress) {
-            alert('Please enter your email address');
+            await showAlertModal('Please enter your email address');
             return;
         }
 
@@ -740,22 +972,22 @@ function handleProfileCancel() {
 }
 
 async function handlePasswordChange() {
-    const currentPassword = prompt('Enter your current password:');
+    const currentPassword = await showPromptModal('Enter your current password:');
     if (!currentPassword) return;
 
-    const newPassword = prompt('Enter your new password:');
+    const newPassword = await showPromptModal('Enter your new password:');
     if (!newPassword) return;
 
-    const confirmPassword = prompt('Confirm your new password:');
+    const confirmPassword = await showPromptModal('Confirm your new password:');
     if (!confirmPassword) return;
 
     if (newPassword !== confirmPassword) {
-        alert('New passwords do not match!');
+        await showAlertModal('New passwords do not match!');
         return;
     }
 
     if (newPassword.length < 6) {
-        alert('Password must be at least 6 characters long');
+        await showAlertModal('Password must be at least 6 characters long');
         return;
     }
 
@@ -768,12 +1000,12 @@ async function handlePasswordChange() {
         const result = await changeAdminPasswordAPI(passwordData);
 
         if (result.success) {
-            alert('Password changed successfully!');
+            await showAlertModal('Password changed successfully!');
         } else {
-            alert('Failed to change password: ' + result.error);
+            await showAlertModal('Failed to change password: ' + result.error);
         }
     } catch (error) {
-        alert('Error changing password: ' + error.message);
+        await showAlertModal('Error changing password: ' + error.message);
     }
 }
 
@@ -790,8 +1022,8 @@ function handleSettingsSave() {
     showMessage('Settings saved successfully!', 'success');
 }
 
-function handleResetDefaults() {
-    if (confirm('Are you sure you want to reset all settings to defaults?')) {
+async function handleResetDefaults() {
+    if (await showConfirmModal('Are you sure you want to reset all settings to defaults?')) {
         const emailToggle = document.getElementById('emailToggle');
         if (emailToggle) {
             emailToggle.checked = true;
@@ -802,17 +1034,17 @@ function handleResetDefaults() {
     }
 }
 
-function handlePhotoUpload(event) {
+async function handlePhotoUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+        await showAlertModal('Please select an image file');
         return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-        alert('Image size should be less than 2MB');
+        await showAlertModal('Image size should be less than 2MB');
         return;
     }
 
@@ -870,7 +1102,7 @@ async function registerStudent() {
             'firstName': 'First Name',
             'lastName': 'Last Name'
         };
-        alert('Please fill in all required fields: ' + missingFields.map(field => fieldNames[field] || field).join(', '));
+        await showAlertModal('Please fill in all required fields: ' + missingFields.map(field => fieldNames[field] || field).join(', '));
         return;
     }
 
@@ -901,37 +1133,37 @@ async function registerStudent() {
 
     // Validation
     if (studentData.cgpa && (studentData.cgpa < 0 || studentData.cgpa > 10)) {
-        alert('CGPA must be between 0 and 10');
+        await showAlertModal('CGPA must be between 0 and 10');
         return;
     }
 
     if (studentData.tenthPercentage && (studentData.tenthPercentage < 0 || studentData.tenthPercentage > 100)) {
-        alert('10th Percentage must be between 0 and 100');
+        await showAlertModal('10th Percentage must be between 0 and 100');
         return;
     }
 
     if (studentData.twelfthPercentage && (studentData.twelfthPercentage < 0 || studentData.twelfthPercentage > 100)) {
-        alert('12th Percentage must be between 0 and 100');
+        await showAlertModal('12th Percentage must be between 0 and 100');
         return;
     }
 
     if (studentData.backLogsCount < 0) {
-        alert('Backlogs count cannot be negative');
+        await showAlertModal('Backlogs count cannot be negative');
         return;
     }
 
     if (studentData.emailId && !isValidEmail(studentData.emailId)) {
-        alert('Please enter a valid email address');
+        await showAlertModal('Please enter a valid email address');
         return;
     }
 
     if (studentData.collegeEmailId && !isValidEmail(studentData.collegeEmailId)) {
-        alert('Please enter a valid college email address');
+        await showAlertModal('Please enter a valid college email address');
         return;
     }
 
     if (studentData.mobileNo && !isValidMobile(studentData.mobileNo)) {
-        alert('Please enter a valid 10-digit mobile number');
+        await showAlertModal('Please enter a valid 10-digit mobile number');
         return;
     }
 
@@ -952,7 +1184,7 @@ async function registerStudent() {
         }
 
         const result = await response.json();
-        alert('Student registered successfully!');
+        await showAlertModal('Student registered successfully!');
 
         // Reset form fields
         const formFields = [
@@ -968,7 +1200,7 @@ async function registerStudent() {
 
     } catch (error) {
         console.error('Full error details:', error);
-        alert('Registration failed: ' + error.message);
+        await showAlertModal('Registration failed: ' + error.message);
     } finally {
         registerBtn.textContent = originalText;
         registerBtn.disabled = false;
@@ -1278,12 +1510,12 @@ function showNoEventsMessage(tabType) {
     }
 }
 
-function showEventForm() {
+async function showEventForm() {
     const form = document.getElementById('event-creation-form');
     const eventCards = document.getElementById('eventCards');
 
     if (!form || !eventCards) {
-        alert('Form element not found!');
+        await showAlertModal('Form element not found!');
         return;
     }
 
@@ -1321,7 +1553,7 @@ async function submitEventForm() {
 
     if (!eventData.eventName || !eventData.organizingCompany || !eventData.registrationStart ||
         !eventData.registrationEnd || !eventData.eventDescription) {
-        alert('Please fill in all required fields');
+        await showAlertModal('Please fill in all required fields');
         return;
     }
 
@@ -1329,7 +1561,7 @@ async function submitEventForm() {
     const regEnd = new Date(eventData.registrationEnd);
 
     if (regEnd <= regStart) {
-        alert('Registration end date must be after registration start date');
+        await showAlertModal('Registration end date must be after registration start date');
         return;
     }
 
@@ -1340,7 +1572,7 @@ async function submitEventForm() {
         });
 
         if (response.ok) {
-            alert('Event created successfully!');
+            await showAlertModal('Event created successfully!');
             closeEventForm();
 
             const activeTab = document.querySelector('.event-tab[style*="background: linear-gradient"]');
@@ -1354,11 +1586,11 @@ async function submitEventForm() {
             }
         } else {
             const error = await response.text();
-            alert('Error creating event: ' + error);
+            await showAlertModal('Error creating event: ' + error);
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to create event: ' + error.message);
+        await showAlertModal('Failed to create event: ' + error.message);
     }
 }
 
@@ -1501,15 +1733,15 @@ async function viewEvent(eventId) {
         const response = await apiFetch(`/api/events/${eventId}`);
         if (response.ok) {
             const event = await response.json();
-            alert(`Event Details:\nName: ${event.eventName}\nCompany: ${event.organizingCompany}\nDescription: ${event.eventDescription}`);
+            await showAlertModal(`Event Details:\nName: ${event.eventName}\nCompany: ${event.organizingCompany}\nDescription: ${event.eventDescription}`);
         }
     } catch (error) {
         console.error('Error viewing event:', error);
     }
 }
 
-function editEvent(eventId) {
-    alert('Edit event with ID: ' + eventId);
+async function editEvent(eventId) {
+    await showAlertModal('Edit event with ID: ' + eventId);
 }
 
 function searchEvents(query) {
@@ -1858,7 +2090,7 @@ async function openDriveStats(eventId, eventName, companyName) {
     } catch (error) {
         console.error('Error opening drive stats:', error);
         closeDriveStats();
-        alert('Error loading drive statistics. Please try again.');
+        await showAlertModal('Error loading drive statistics. Please try again.');
     }
 }
 
@@ -1903,7 +2135,7 @@ async function exportDriveStats(eventId) {
     try {
         const stats = await fetchDriveStats(eventId);
         if (!stats.participations || stats.participations.length === 0) {
-            alert('No data to export.');
+            await showAlertModal('No data to export.');
             return;
         }
 
@@ -1940,7 +2172,7 @@ async function exportDriveStats(eventId) {
 
     } catch (error) {
         console.error('Error exporting drive stats:', error);
-        alert('Failed to export. Please try again.');
+        await showAlertModal('Failed to export. Please try again.');
     }
 }
 
@@ -2062,13 +2294,13 @@ async function submitCompanyForm() {
     };
 
     if (!companyData.companyName || !companyData.hrName || !companyData.hrEmail || !companyData.hrPhone) {
-        alert('Please fill in all required fields');
+        await showAlertModal('Please fill in all required fields');
         return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(companyData.hrEmail)) {
-        alert('Please enter a valid email address');
+        await showAlertModal('Please enter a valid email address');
         return;
     }
 
@@ -2080,20 +2312,20 @@ async function submitCompanyForm() {
 
         if (response.ok) {
             const createdCompany = await response.json();
-            alert(`Company created successfully!\n\nCompany ID: ${createdCompany.companyId}\nPassword: ${companyData.password}\n\nPlease note these credentials for future reference.`);
+            await showAlertModal(`Company created successfully!\n\nCompany ID: ${createdCompany.companyId}\nPassword: ${companyData.password}\n\nPlease note these credentials for future reference.`);
             resetCompanyForm();
             switchCompanyTab(document.querySelector('.company-tab[onclick*="directory"]'), 'directory');
         } else {
             const errorText = await response.text();
             if (response.status === 400) {
-                alert('Error creating company: Company name or email already exists. Please use different details.');
+                await showAlertModal('Error creating company: Company name or email already exists. Please use different details.');
             } else {
-                alert('Error creating company: ' + errorText);
+                await showAlertModal('Error creating company: ' + errorText);
             }
         }
     } catch (error) {
         console.error('Error:', error);
-        alert('Failed to create company. Please check your connection and try again.');
+        await showAlertModal('Failed to create company. Please check your connection and try again.');
     }
 }
 
@@ -2103,21 +2335,21 @@ function resetCompanyForm() {
 }
 
 async function terminateCompany(companyId) {
-    if (confirm('Are you sure you want to terminate this company\'s access? This action cannot be undone.')) {
+    if (await showConfirmModal('Are you sure you want to terminate this company\'s access? This action cannot be undone.')) {
         try {
             const response = await apiFetch(`/api/companies/${companyId}`, {
                 method: 'DELETE'
             });
 
             if (response.ok) {
-                alert('Company access terminated successfully');
+                await showAlertModal('Company access terminated successfully');
                 loadCompanies();
             } else {
-                alert('Error terminating company access');
+                await showAlertModal('Error terminating company access');
             }
         } catch (error) {
             console.error('Error:', error);
-            alert('Failed to terminate company: ' + error.message);
+            await showAlertModal('Failed to terminate company: ' + error.message);
         }
     }
 }
@@ -2241,44 +2473,44 @@ function filterCompaniesByStatus(status) {
     console.log('Filter by status:', status);
 }
 
-function exportCompanyList() {
-    alert('Export company list functionality');
+async function exportCompanyList() {
+    await showAlertModal('Export company list functionality');
 }
 
-function viewCompanyDetails(companyId) {
-    alert('View details for company: ' + companyId);
+async function viewCompanyDetails(companyId) {
+    await showAlertModal('View details for company: ' + companyId);
 }
 
-function editCompany(companyId) {
-    alert('Edit company: ' + companyId);
+async function editCompany(companyId) {
+    await showAlertModal('Edit company: ' + companyId);
 }
 
-function toggleCompanyStatus(companyName) {
-    alert('Toggle status for: ' + companyName);
+async function toggleCompanyStatus(companyName) {
+    await showAlertModal('Toggle status for: ' + companyName);
 }
 
-function approveCompany(companyName) {
-    alert('Approve company: ' + companyName);
+async function approveCompany(companyName) {
+    await showAlertModal('Approve company: ' + companyName);
 }
 
-function rejectCompany(companyName) {
-    alert('Reject company: ' + companyName);
+async function rejectCompany(companyName) {
+    await showAlertModal('Reject company: ' + companyName);
 }
 
-function createNewDrive() {
-    alert('Create new drive functionality');
+async function createNewDrive() {
+    await showAlertModal('Create new drive functionality');
 }
 
-function editDrive(driveId) {
-    alert('Edit drive: ' + driveId);
+async function editDrive(driveId) {
+    await showAlertModal('Edit drive: ' + driveId);
 }
 
-function manageStudents(driveId) {
-    alert('Manage students for drive: ' + driveId);
+async function manageStudents(driveId) {
+    await showAlertModal('Manage students for drive: ' + driveId);
 }
 
-function viewResults(driveId) {
-    alert('View results for drive: ' + driveId);
+async function viewResults(driveId) {
+    await showAlertModal('View results for drive: ' + driveId);
 }
 
 // =============================================
@@ -2293,44 +2525,44 @@ function filterAnalyticsByBranch(branch) {
     console.log('Filter analytics by branch:', branch);
 }
 
-function exportAnalyticsReport() {
-    alert('Export analytics report');
+async function exportAnalyticsReport() {
+    await showAlertModal('Export analytics report');
 }
 
-function exportReport(format) {
-    alert('Export report as ' + format);
+async function exportReport(format) {
+    await showAlertModal('Export report as ' + format);
 }
 
-function exportCompanyReport(format) {
-    alert('Export company report as ' + format);
+async function exportCompanyReport(format) {
+    await showAlertModal('Export company report as ' + format);
 }
 
-function shareReport() {
-    alert('Share report functionality');
+async function shareReport() {
+    await showAlertModal('Share report functionality');
 }
 
-function showPlacementDetails() {
-    alert('Show placement details');
+async function showPlacementDetails() {
+    await showAlertModal('Show placement details');
 }
 
-function showOfferDetails() {
-    alert('Show offer details');
+async function showOfferDetails() {
+    await showAlertModal('Show offer details');
 }
 
-function showPackageDetails() {
-    alert('Show package details');
+async function showPackageDetails() {
+    await showAlertModal('Show package details');
 }
 
-function showTopOffers() {
-    alert('Show top offers');
+async function showTopOffers() {
+    await showAlertModal('Show top offers');
 }
 
-function showCompanyStats() {
-    alert('Show company stats');
+async function showCompanyStats() {
+    await showAlertModal('Show company stats');
 }
 
-function showYearlyComparison() {
-    alert('Show yearly comparison');
+async function showYearlyComparison() {
+    await showAlertModal('Show yearly comparison');
 }
 
 // =============================================
@@ -2423,11 +2655,11 @@ function showTab(tabId, button) {
 // 11. GLOBAL SEARCH
 // =============================================
 
-function globalSearch(event) {
+async function globalSearch(event) {
     if (event) event.preventDefault();
     const query = document.getElementById('globalSearchInput').value.trim();
     if (!query) return;
-    alert('Search for: ' + query + '\n\nGlobal search functionality coming soon.');
+    await showAlertModal('Search for: ' + query + '\n\nGlobal search functionality coming soon.');
 }
 
 // =============================================
@@ -2452,8 +2684,8 @@ document.addEventListener('DOMContentLoaded', function () {
 // 13. LOGOUT
 // =============================================
 
-function logoutAdmin() {
-    if (confirm('Are you sure you want to logout?')) {
+async function logoutAdmin() {
+    if (await showConfirmModal('Are you sure you want to logout?')) {
         apiFetch('/api/logout', { method: 'POST' })
             .then(() => {
                 sessionStorage.clear();
