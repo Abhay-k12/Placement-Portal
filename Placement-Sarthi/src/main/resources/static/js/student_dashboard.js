@@ -3,13 +3,15 @@
 // Sends session cookie with every request
 // =============================================
 function apiFetch(url, options = {}) {
+    const mergedHeaders = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+    };
+
     const defaultOptions = {
         credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        ...options
+        ...options,
+        headers: mergedHeaders
     };
 
     if (options.body instanceof FormData) {

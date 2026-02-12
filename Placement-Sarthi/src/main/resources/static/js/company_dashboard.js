@@ -2,13 +2,16 @@
 // HELPER: Authenticated fetch wrapper
 // =============================================
 function apiFetch(url, options = {}) {
+    // Merge headers separately to avoid overwrite
+    const mergedHeaders = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
+    };
+
     const defaultOptions = {
         credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        ...options
+        ...options,
+        headers: mergedHeaders
     };
 
     // Don't set Content-Type for FormData (file uploads)
@@ -76,8 +79,7 @@ function setupMobileMenu() {
 
     if (mobileMenuBtn && mobileMenu) {
         mobileMenuBtn.addEventListener('click', function () {
-            const currentDisplay = mobileMenu.style.display;
-            mobileMenu.style.display = currentDisplay === 'block' ? 'none' : 'block';
+            mobileMenu.style.display = mobileMenu.style.display === 'block' ? 'none' : 'block';
         });
     }
 }
@@ -90,9 +92,7 @@ function setupPageNavigation() {
     navItems.forEach(item => {
         item.addEventListener('click', function () {
             const pageId = getPageIdFromNavItem(this.textContent);
-            if (pageId) {
-                showPage(pageId);
-            }
+            if (pageId) showPage(pageId);
         });
     });
 }
@@ -116,7 +116,6 @@ function showPage(pageId) {
     if (targetPage) {
         targetPage.style.display = 'block';
     } else {
-        console.error('Page not found:', pageId);
         const dashboard = document.getElementById('dashboard');
         if (dashboard) dashboard.style.display = 'block';
     }
@@ -131,26 +130,19 @@ function showPage(pageId) {
     const activeNavItem = findNavItemForPage(pageId);
     if (activeNavItem) activeNavItem.classList.add('active');
 
-    // Initialize specific page functionality
-    if (pageId === 'recruitment') {
-        initializeRecruitmentPage();
-    } else if (pageId === 'studentFilter') {
-        initializeStudentFilterPage();
-    } else if (pageId === 'messages') {
-        initializeMessagesSection();
-    }
+    if (pageId === 'recruitment') initializeRecruitmentPage();
+    else if (pageId === 'studentFilter') initializeStudentFilterPage();
 }
 
 function findNavItemForPage(pageId) {
     const navItems = document.querySelectorAll('.navbar-item');
     for (let item of navItems) {
-        const itemText = item.textContent.trim().toLowerCase();
-
-        if (pageId === 'dashboard' && itemText.includes('dashboard')) return item;
-        if (pageId === 'recruitment' && itemText.includes('recruitment')) return item;
-        if (pageId === 'profile' && itemText.includes('profile')) return item;
-        if (pageId === 'studentFilter' && (itemText.includes('student') || itemText.includes('filter'))) return item;
-        if (pageId === 'bulkOperations' && (itemText.includes('bulk') || itemText.includes('upload'))) return item;
+        const t = item.textContent.trim().toLowerCase();
+        if (pageId === 'dashboard' && t.includes('dashboard')) return item;
+        if (pageId === 'recruitment' && t.includes('recruitment')) return item;
+        if (pageId === 'profile' && t.includes('profile')) return item;
+        if (pageId === 'studentFilter' && (t.includes('student') || t.includes('filter'))) return item;
+        if (pageId === 'bulkOperations' && (t.includes('bulk') || t.includes('upload'))) return item;
     }
     return null;
 }
@@ -159,40 +151,31 @@ function findNavItemForPage(pageId) {
 // EVENT FORM HANDLERS
 // =============================================
 function setupEventFormHandlers() {
-    const createRecruitmentBtn = document.getElementById('createRecruitment');
-    if (createRecruitmentBtn) {
-        createRecruitmentBtn.addEventListener('click', showEventForm);
-    }
+    const createBtn = document.getElementById('createRecruitment');
+    if (createBtn) createBtn.addEventListener('click', showEventForm);
 
-    const cancelEventBtn = document.getElementById('cancelEvent');
-    if (cancelEventBtn) {
-        cancelEventBtn.addEventListener('click', closeEventForm);
-    }
+    const cancelBtn = document.getElementById('cancelEvent');
+    if (cancelBtn) cancelBtn.addEventListener('click', closeEventForm);
 }
 
 // =============================================
 // GLOBAL SEARCH
 // =============================================
 function setupGlobalSearch() {
-    const globalSearchForm = document.querySelector('.search-form');
-    if (globalSearchForm) {
-        globalSearchForm.addEventListener('submit', function (event) {
-            event.preventDefault();
-            const searchInput = document.getElementById('globalSearchInput');
-            if (searchInput) {
-                const query = searchInput.value;
-                alert(`Searching for: ${query}`);
-            }
+    const form = document.querySelector('.search-form');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const input = document.getElementById('globalSearchInput');
+            if (input) alert(`Searching for: ${input.value}`);
         });
     }
 }
 
 function globalSearch(event) {
     if (event) event.preventDefault();
-    const searchInput = document.getElementById('globalSearchInput');
-    if (searchInput) {
-        alert(`Searching for: ${searchInput.value}`);
-    }
+    const input = document.getElementById('globalSearchInput');
+    if (input) alert(`Searching for: ${input.value}`);
 }
 
 // =============================================
@@ -201,14 +184,8 @@ function globalSearch(event) {
 function logoutCompany() {
     if (confirm('Are you sure you want to logout?')) {
         apiFetch('/api/logout', { method: 'POST' })
-            .then(() => {
-                sessionStorage.clear();
-                window.location.href = 'login_page.html';
-            })
-            .catch(() => {
-                sessionStorage.clear();
-                window.location.href = 'login_page.html';
-            });
+            .then(() => { sessionStorage.clear(); window.location.href = 'login_page.html'; })
+            .catch(() => { sessionStorage.clear(); window.location.href = 'login_page.html'; });
     }
 }
 
@@ -218,13 +195,11 @@ function logoutCompany() {
 async function loadCompanyProfile() {
     const currentUser = sessionStorage.getItem('currentUser');
     if (!currentUser) return;
-
     const user = JSON.parse(currentUser);
     if (user.role !== 'company') return;
 
     try {
         let companyData = await fetchCompanyProfile(user.id);
-
         if (!companyData) {
             companyData = user.companyData;
         } else {
@@ -235,30 +210,20 @@ async function loadCompanyProfile() {
         updateCompanyProfileElement('.admin-name', companyData.hrName || 'HR Manager');
         updateCompanyProfileElement('.college-name', companyData.companyName || 'Company');
         updateCompanyProfileElement('.admin-role', 'HR Manager');
-
-        if (companyData.photoLink) {
-            updateCompanyProfileImage(companyData.photoLink);
-        }
-
+        if (companyData.photoLink) updateCompanyProfileImage(companyData.photoLink);
         updateCompanyDetailItem('Email Address', companyData.hrEmail || 'Not specified');
         updateCompanyDetailItem('Phone Number', companyData.hrPhone || 'Not specified');
         updateCompanyDetailItem('Location', companyData.location || 'Not specified');
-
     } catch (error) {
         console.error('Error loading company profile:', error);
-        if (user.companyData) {
-            loadStoredCompanyData(user.companyData);
-        }
+        if (user.companyData) loadStoredCompanyData(user.companyData);
     }
 }
 
 async function fetchCompanyProfile(companyId) {
     try {
         const response = await apiFetch(`/api/companies/${companyId}`);
-        if (response.ok) {
-            return await response.json();
-        }
-        console.error('Failed to fetch company profile');
+        if (response.ok) return await response.json();
         return null;
     } catch (error) {
         console.error('Error fetching company profile:', error);
@@ -267,38 +232,33 @@ async function fetchCompanyProfile(companyId) {
 }
 
 function updateCompanyProfileElement(selector, value) {
-    const element = document.querySelector(selector);
-    if (element) element.textContent = value;
+    const el = document.querySelector(selector);
+    if (el) el.textContent = value;
 }
 
 function updateCompanyProfileImage(imageUrl) {
-    const profileImg = document.querySelector('.profile-img');
-    if (profileImg && imageUrl) profileImg.src = imageUrl;
+    const img = document.querySelector('.profile-img');
+    if (img && imageUrl) img.src = imageUrl;
 }
 
 function updateCompanyDetailItem(label, value) {
-    const detailItems = document.querySelectorAll('.detail-item');
-    detailItems.forEach(item => {
-        const labelElement = item.querySelector('.label');
-        if (labelElement && labelElement.textContent === label) {
-            const valueElement = item.querySelector('.value');
-            if (valueElement) valueElement.textContent = value;
+    document.querySelectorAll('.detail-item').forEach(item => {
+        const labelEl = item.querySelector('.label');
+        if (labelEl && labelEl.textContent === label) {
+            const valueEl = item.querySelector('.value');
+            if (valueEl) valueEl.textContent = value;
         }
     });
 }
 
-function loadStoredCompanyData(companyData) {
-    updateCompanyProfileElement('.admin-name', companyData.hrName || 'HR Manager');
-    updateCompanyProfileElement('.college-name', companyData.companyName || 'Company');
+function loadStoredCompanyData(d) {
+    updateCompanyProfileElement('.admin-name', d.hrName || 'HR Manager');
+    updateCompanyProfileElement('.college-name', d.companyName || 'Company');
     updateCompanyProfileElement('.admin-role', 'HR Manager');
-
-    if (companyData.photoLink) {
-        updateCompanyProfileImage(companyData.photoLink);
-    }
-
-    updateCompanyDetailItem('Email Address', companyData.hrEmail || 'Not specified');
-    updateCompanyDetailItem('Phone Number', companyData.hrPhone || 'Not specified');
-    updateCompanyDetailItem('Location', companyData.location || 'Not specified');
+    if (d.photoLink) updateCompanyProfileImage(d.photoLink);
+    updateCompanyDetailItem('Email Address', d.hrEmail || 'Not specified');
+    updateCompanyDetailItem('Phone Number', d.hrPhone || 'Not specified');
+    updateCompanyDetailItem('Location', d.location || 'Not specified');
 }
 
 // =============================================
@@ -313,7 +273,6 @@ async function loadCompanyEvents() {
     try {
         const currentUser = sessionStorage.getItem('currentUser');
         if (!currentUser) return;
-
         const user = JSON.parse(currentUser);
         const companyName = user.companyData?.companyName || user.name;
 
@@ -321,61 +280,66 @@ async function loadCompanyEvents() {
 
         if (response.ok) {
             let events = await response.json();
+            events = events.map(event => ({ ...event, status: classifyEventStatus(event) }));
+            currentEvents = events;
 
-            events = events.map(event => ({
-                ...event,
-                status: classifyEventStatus(event)
+            // Fetch registration counts for each event
+            await Promise.all(currentEvents.map(async (event) => {
+                try {
+                    const countResp = await apiFetch(`/api/events/${event.eventId}/registrations/count`);
+                    if (countResp.ok) {
+                        const data = await countResp.json();
+                        event.registrationCount = data.count || 0;
+                    }
+                } catch (e) {
+                    event.registrationCount = 0;
+                }
             }));
 
-            currentEvents = events;
             displayEvents(currentEvents);
         } else {
-            console.error('Failed to load events. Status:', response.status);
             displayEvents([]);
             showRecruitmentMessage('No events found for your company', 'info');
         }
     } catch (error) {
         console.error('Error loading events:', error);
-        displayFallbackEvents();
-        showRecruitmentMessage('Error loading events. Using demo data.', 'info');
+        displayEvents([]);
+        showRecruitmentMessage('Error loading events.', 'error');
     }
 }
 
 function classifyEventStatus(event) {
     const now = new Date();
-    const registrationStart = new Date(event.registrationStart);
-    const registrationEnd = new Date(event.registrationEnd);
-
+    const start = new Date(event.registrationStart);
+    const end = new Date(event.registrationEnd);
     if (event.status === 'CANCELLED') return 'CANCELLED';
-    if (now < registrationStart) return 'UPCOMING';
-    if (now >= registrationStart && now <= registrationEnd) return 'ONGOING';
-    if (now > registrationEnd) return 'COMPLETED';
+    if (now < start) return 'UPCOMING';
+    if (now >= start && now <= end) return 'ONGOING';
+    if (now > end) return 'COMPLETED';
     return 'UPCOMING';
 }
 
 function displayEvents(events) {
-    const recruitmentCards = document.getElementById('recruitmentCards');
-    if (!recruitmentCards) return;
+    const container = document.getElementById('recruitmentCards');
+    if (!container) return;
 
     if (!events || events.length === 0) {
-        recruitmentCards.innerHTML = `
+        container.innerHTML = `
             <div style="text-align: center; padding: 3rem; color: #64748b;">
                 <span class="material-symbols-outlined" style="font-size: 4rem; margin-bottom: 1rem;">event</span>
                 <h3>No Events Created</h3>
                 <p>Create your first recruitment event to get started.</p>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
-    recruitmentCards.innerHTML = events.map(event => {
-        const safeEventId = String(event.eventId).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    container.innerHTML = events.map(event => {
+        const safeId = String(event.eventId).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        const regCount = event.registrationCount || 0;
         return `
         <div class="event-card" data-event-id="${event.eventId}">
             <div class="event-card-header">
-                <div class="event-company-logo">
-                    ${getCompanyInitials(event.organizingCompany)}
-                </div>
+                <div class="event-company-logo">${getCompanyInitials(event.organizingCompany)}</div>
                 <div class="event-info">
                     <h3>${event.eventName}</h3>
                     <p class="event-role">${event.jobRole || 'Various Roles'}</p>
@@ -383,121 +347,96 @@ function displayEvents(events) {
                 <span class="event-status ${getStatusClass(event.status)}">${event.status}</span>
             </div>
             <div class="event-details">
+                <p class="event-detail"><strong>Event ID:</strong> <code style="background:#f1f5f9; padding:0.125rem 0.5rem; border-radius:4px; font-size:0.8rem; color:#1e293b; font-weight:600;">${event.eventId}</code></p>
                 <p class="event-detail"><strong>Registration:</strong> ${formatDateTime(event.registrationStart)} - ${formatDateTime(event.registrationEnd)}</p>
                 <p class="event-detail"><strong>Mode:</strong> ${event.eventMode}</p>
                 <p class="event-detail"><strong>CGPA Required:</strong> ${event.expectedCgpa ? event.expectedCgpa + '+' : 'Not specified'}</p>
                 <p class="event-detail"><strong>Package:</strong> ${event.expectedPackage ? '₹' + event.expectedPackage + ' LPA' : 'Not specified'}</p>
                 <p class="event-detail"><strong>Departments:</strong> ${getEligibleDepartmentsDisplay(event.eligibleDepartments)}</p>
-                <p class="event-detail"><strong>Status:</strong> ${getStatusDescription(event.status)}</p>
+                <p class="event-detail">
+                    <strong>Registered Students:</strong>
+                    <span style="background:#dbeafe; color:#1e40af; padding:0.125rem 0.5rem; border-radius:12px; font-weight:600; font-size:0.8rem;">${regCount}</span>
+                </p>
             </div>
             <div class="event-actions">
-                <button class="event-action-btn" onclick="viewEventDetails('${safeEventId}')">View Details</button>
-                <button class="event-action-btn edit" onclick="editEvent('${safeEventId}')">Edit</button>
-                <button class="event-action-btn delete" onclick="deleteEvent('${safeEventId}')">Delete</button>
+                <button class="event-action-btn" onclick="viewEventDetails('${safeId}')">View</button>
+                <button class="event-action-btn edit" onclick="editEvent('${safeId}')">Edit</button>
+                <button class="event-action-btn" onclick="exportEventStudents('${safeId}')" style="background:#10b981;">Export</button>
+                <button class="event-action-btn delete" onclick="deleteEvent('${safeId}')">Delete</button>
             </div>
-        </div>
-        `;
+        </div>`;
     }).join('');
 }
 
-function getStatusDescription(status) {
-    const statusDescriptions = {
-        'UPCOMING': 'Registration will start soon',
-        'ONGOING': 'Registration is currently open',
-        'COMPLETED': 'Registration has ended',
-        'CANCELLED': 'Event has been cancelled'
-    };
-    return statusDescriptions[status] || 'Status not specified';
+// Export registered students for an event
+async function exportEventStudents(eventId) {
+    try {
+        showRecruitmentMessage('Downloading...', 'info');
+        const response = await apiFetch(`/api/events/${eventId}/registrations/export`);
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `registered_students_${eventId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showRecruitmentMessage('Export downloaded!', 'success');
+        } else {
+            showRecruitmentMessage('Failed to export', 'error');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showRecruitmentMessage('Network error', 'error');
+    }
 }
 
 function getStatusClass(status) {
-    const statusClasses = {
-        'UPCOMING': 'upcoming',
-        'ONGOING': 'ongoing',
-        'COMPLETED': 'completed',
-        'CANCELLED': 'cancelled'
-    };
-    return statusClasses[status] || 'upcoming';
+    return { 'UPCOMING': 'upcoming', 'ONGOING': 'ongoing', 'COMPLETED': 'completed', 'CANCELLED': 'cancelled' }[status] || 'upcoming';
 }
 
-function displayFallbackEvents() {
-    const recruitmentCards = document.getElementById('recruitmentCards');
-    if (!recruitmentCards) return;
-
-    recruitmentCards.innerHTML = `
-        <div class="event-card">
-            <div class="event-card-header">
-                <div class="event-company-logo">CO</div>
-                <div class="event-info">
-                    <h3>Sample Recruitment Drive</h3>
-                    <p class="event-role">Software Engineer</p>
-                </div>
-                <span class="event-status upcoming">UPCOMING</span>
-            </div>
-            <div class="event-details">
-                <p class="event-detail"><strong>Registration:</strong> Jan 15, 2024 - Jan 30, 2024</p>
-                <p class="event-detail"><strong>Mode:</strong> ONLINE</p>
-                <p class="event-detail"><strong>CGPA Required:</strong> 7.5+</p>
-                <p class="event-detail"><strong>Package:</strong> ₹12 LPA</p>
-                <p class="event-detail"><strong>Departments:</strong> Computer Science, Electronics</p>
-            </div>
-            <div class="event-actions">
-                <button class="event-action-btn" onclick="viewEventDetails(1)">View Details</button>
-                <button class="event-action-btn edit" onclick="editEvent(1)">Edit</button>
-                <button class="event-action-btn delete" onclick="deleteEvent(1)">Delete</button>
-            </div>
-        </div>
-    `;
+function getStatusDescription(status) {
+    return { 'UPCOMING': 'Registration will start soon', 'ONGOING': 'Registration is currently open', 'COMPLETED': 'Registration has ended', 'CANCELLED': 'Event has been cancelled' }[status] || '';
 }
 
 // =============================================
 // EVENT FORM (CREATE/EDIT)
 // =============================================
 function showEventForm() {
-    const eventForm = document.getElementById('event-creation-form');
-    const createBtn = document.getElementById('createRecruitment');
+    const form = document.getElementById('event-creation-form');
+    const btn = document.getElementById('createRecruitment');
+    if (!form || !btn) return;
 
-    if (!eventForm || !createBtn) {
-        console.error('Event form elements not found');
-        return;
-    }
+    form.style.display = 'block';
+    btn.style.display = 'none';
 
-    eventForm.style.display = 'block';
-    createBtn.style.display = 'none';
-
-    // Auto-fill company name
     const currentUser = sessionStorage.getItem('currentUser');
     if (currentUser) {
         const user = JSON.parse(currentUser);
         const companyName = user.companyData?.companyName || user.name;
-        const companyInput = document.getElementById('organizingCompany');
-        if (companyInput) companyInput.value = companyName;
+        const input = document.getElementById('organizingCompany');
+        if (input) input.value = companyName;
     }
 
-    // Set minimum dates
-    const now = new Date();
-    const minDate = now.toISOString().slice(0, 16);
+    const now = new Date().toISOString().slice(0, 16);
     const startInput = document.getElementById('registrationStart');
     const endInput = document.getElementById('registrationEnd');
-
-    if (startInput) startInput.min = minDate;
-    if (endInput) endInput.min = minDate;
+    if (startInput) startInput.min = now;
+    if (endInput) endInput.min = now;
 }
 
 function closeEventForm() {
-    const eventForm = document.getElementById('event-creation-form');
-    const createBtn = document.getElementById('createRecruitment');
+    const form = document.getElementById('event-creation-form');
+    const btn = document.getElementById('createRecruitment');
+    if (!form || !btn) return;
 
-    if (!eventForm || !createBtn) {
-        console.error('Event form elements not found');
-        return;
-    }
-
-    eventForm.style.display = 'none';
-    createBtn.style.display = 'flex';
+    form.style.display = 'none';
+    btn.style.display = 'flex';
     resetEventForm();
 
-    // Reset submit button back to "Create Event"
     const submitBtn = document.querySelector('#event-creation-form button[onclick*="submitEventForm"], #event-creation-form button[onclick*="updateEvent"]');
     if (submitBtn) {
         submitBtn.textContent = 'Create Event';
@@ -508,16 +447,16 @@ function closeEventForm() {
 function resetEventForm() {
     const form = document.getElementById('addEventForm');
     if (form) form.reset();
-
-    const checkboxes = document.querySelectorAll('input[name="eligibleDepartments"]');
-    checkboxes.forEach(checkbox => checkbox.checked = false);
+    document.querySelectorAll('input[name="eligibleDepartments"]').forEach(cb => cb.checked = false);
 }
 
 async function submitEventForm() {
     try {
         const formData = getEventFormData();
-
         if (!validateEventForm(formData)) return;
+
+        // DO NOT send eventId — backend will generate it
+        delete formData.eventId;
 
         const response = await apiFetch('/api/events/create', {
             method: 'POST',
@@ -525,82 +464,42 @@ async function submitEventForm() {
         });
 
         if (response.ok) {
-            showRecruitmentMessage('Event created successfully!', 'success');
+            const created = await response.json();
+            showRecruitmentMessage(`Event created! ID: ${created.eventId}`, 'success');
             closeEventForm();
             loadCompanyEvents();
         } else {
-            const errorText = await response.text();
-            console.error('Server error:', errorText);
-            showRecruitmentMessage('Failed to create event. Please try again.', 'error');
+            showRecruitmentMessage('Failed to create event.', 'error');
         }
     } catch (error) {
-        console.error('Error creating event:', error);
-        showRecruitmentMessage('Network error. Please try again.', 'error');
+        showRecruitmentMessage('Network error.', 'error');
     }
 }
 
 function getEventFormData() {
     const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
     const companyName = currentUser.companyData?.companyName || currentUser.name;
-
-    const selectedDepartments = Array.from(document.querySelectorAll('input[name="eligibleDepartments"]:checked'))
-        .map(checkbox => checkbox.value);
-
-    const registrationStart = document.getElementById('registrationStart')?.value;
-    const registrationEnd = document.getElementById('registrationEnd')?.value;
-
-    let status = 'UPCOMING';
-    if (registrationStart && registrationEnd) {
-        const now = new Date();
-        const startDate = new Date(registrationStart);
-        const endDate = new Date(registrationEnd);
-
-        if (now >= startDate && now <= endDate) {
-            status = 'ONGOING';
-        } else if (now > endDate) {
-            status = 'COMPLETED';
-        }
-    }
+    const selectedDepts = Array.from(document.querySelectorAll('input[name="eligibleDepartments"]:checked')).map(cb => cb.value);
 
     return {
         eventName: document.getElementById('eventName')?.value || '',
         organizingCompany: companyName,
         expectedCgpa: parseFloat(document.getElementById('expectedCgpa')?.value) || 0,
         jobRole: document.getElementById('jobRole')?.value || '',
-        registrationStart: registrationStart || '',
-        registrationEnd: registrationEnd || '',
+        registrationStart: document.getElementById('registrationStart')?.value || '',
+        registrationEnd: document.getElementById('registrationEnd')?.value || '',
         eventMode: document.getElementById('eventMode')?.value || 'ONLINE',
         expectedPackage: parseFloat(document.getElementById('expectedPackage')?.value) || null,
         eventDescription: document.getElementById('eventDescription')?.value || '',
-        eligibleDepartments: selectedDepartments,  // Array, NOT JSON.stringify
-        status: status
+        eligibleDepartments: selectedDepts
     };
 }
 
 function validateEventForm(formData) {
-    if (!formData.eventName.trim()) {
-        showRecruitmentMessage('Event name is required', 'error');
-        return false;
-    }
-
-    if (!formData.registrationStart || !formData.registrationEnd) {
-        showRecruitmentMessage('Registration dates are required', 'error');
-        return false;
-    }
-
-    const startDate = new Date(formData.registrationStart);
-    const endDate = new Date(formData.registrationEnd);
-
-    if (endDate <= startDate) {
-        showRecruitmentMessage('Registration end date must be after start date', 'error');
-        return false;
-    }
-
-    if (!formData.eventDescription.trim()) {
-        showRecruitmentMessage('Event description is required', 'error');
-        return false;
-    }
-
+    if (!formData.eventName.trim()) { showRecruitmentMessage('Event name required', 'error'); return false; }
+    if (!formData.registrationStart || !formData.registrationEnd) { showRecruitmentMessage('Dates required', 'error'); return false; }
+    if (new Date(formData.registrationEnd) <= new Date(formData.registrationStart)) { showRecruitmentMessage('End date must be after start', 'error'); return false; }
+    if (!formData.eventDescription.trim()) { showRecruitmentMessage('Description required', 'error'); return false; }
     return true;
 }
 
@@ -610,9 +509,16 @@ function validateEventForm(formData) {
 function viewEventDetails(eventId) {
     const event = currentEvents.find(e => String(e.eventId) === String(eventId));
     if (event) {
-        alert(`Event Details:\n\nName: ${event.eventName}\nCompany: ${event.organizingCompany}\nRole: ${event.jobRole}\nDescription: ${event.eventDescription}\nRegistration: ${formatDateTime(event.registrationStart)} to ${formatDateTime(event.registrationEnd)}`);
-    } else {
-        alert('Event details not available');
+        alert(
+            `Event Details:\n\n` +
+            `ID: ${event.eventId}\n` +
+            `Name: ${event.eventName}\n` +
+            `Company: ${event.organizingCompany}\n` +
+            `Role: ${event.jobRole}\n` +
+            `Description: ${event.eventDescription}\n` +
+            `Registration: ${formatDateTime(event.registrationStart)} to ${formatDateTime(event.registrationEnd)}\n` +
+            `Registered: ${event.registrationCount || 0} students`
+        );
     }
 }
 
@@ -637,28 +543,22 @@ function editEvent(eventId) {
         if (el) el.value = value;
     }
 
-    // Set departments checkboxes
     let departments = [];
     if (event.eligibleDepartments) {
         try {
-            if (typeof event.eligibleDepartments === 'string') {
-                departments = JSON.parse(event.eligibleDepartments);
-            } else if (Array.isArray(event.eligibleDepartments)) {
-                departments = event.eligibleDepartments;
-            }
-        } catch (e) {
-            departments = [];
-        }
+            departments = typeof event.eligibleDepartments === 'string'
+                ? JSON.parse(event.eligibleDepartments)
+                : Array.isArray(event.eligibleDepartments)
+                    ? event.eligibleDepartments
+                    : [];
+        } catch (e) { departments = []; }
     }
-
-    const checkboxes = document.querySelectorAll('input[name="eligibleDepartments"]');
-    checkboxes.forEach(checkbox => {
-        checkbox.checked = departments.includes(checkbox.value);
+    document.querySelectorAll('input[name="eligibleDepartments"]').forEach(cb => {
+        cb.checked = departments.includes(cb.value);
     });
 
     showEventForm();
 
-    // Change submit button to update
     const submitBtn = document.querySelector('#event-creation-form button[onclick*="submitEventForm"], #event-creation-form button[onclick*="updateEvent"]');
     if (submitBtn) {
         submitBtn.textContent = 'Update Event';
@@ -677,46 +577,37 @@ async function updateEvent(eventId) {
         });
 
         if (response.ok) {
-            showRecruitmentMessage('Event updated successfully!', 'success');
+            showRecruitmentMessage('Event updated!', 'success');
             closeEventForm();
             loadCompanyEvents();
         } else {
-            showRecruitmentMessage('Failed to update event', 'error');
+            showRecruitmentMessage('Failed to update', 'error');
         }
     } catch (error) {
-        console.error('Error updating event:', error);
-        showRecruitmentMessage('Network error. Please try again.', 'error');
+        showRecruitmentMessage('Network error', 'error');
     }
 }
 
 async function deleteEvent(eventId) {
-    if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+    if (confirm('Delete this event? This cannot be undone.')) {
         try {
-            const response = await apiFetch(`/api/events/${eventId}`, {
-                method: 'DELETE'
-            });
-
+            const response = await apiFetch(`/api/events/${eventId}`, { method: 'DELETE' });
             if (response.ok) {
-                showRecruitmentMessage('Event deleted successfully!', 'success');
+                showRecruitmentMessage('Event deleted!', 'success');
                 loadCompanyEvents();
             } else {
-                showRecruitmentMessage('Failed to delete event', 'error');
+                showRecruitmentMessage('Failed to delete', 'error');
             }
         } catch (error) {
-            console.error('Error deleting event:', error);
-            showRecruitmentMessage('Network error. Please try again.', 'error');
+            showRecruitmentMessage('Network error', 'error');
         }
     }
 }
 
-// Auto-refresh event status every minute
 function startEventStatusAutoRefresh() {
     setInterval(() => {
         if (currentEvents.length > 0) {
-            currentEvents = currentEvents.map(event => ({
-                ...event,
-                status: classifyEventStatus(event)
-            }));
+            currentEvents = currentEvents.map(e => ({ ...e, status: classifyEventStatus(e) }));
             displayEvents(currentEvents);
         }
     }, 60000);
@@ -725,84 +616,51 @@ function startEventStatusAutoRefresh() {
 // =============================================
 // HELPER FUNCTIONS
 // =============================================
-function getCompanyInitials(companyName) {
-    if (!companyName) return 'CO';
-    return companyName.split(' ').map(word => word[0]).join('').toUpperCase().substring(0, 2);
+function getCompanyInitials(name) {
+    if (!name) return 'CO';
+    return name.split(' ').map(w => w[0]).join('').toUpperCase().substring(0, 2);
 }
 
-function formatDateTime(dateTimeString) {
-    if (!dateTimeString) return 'Not specified';
+function formatDateTime(s) {
+    if (!s) return 'Not specified';
     try {
-        const date = new Date(dateTimeString);
-        if (isNaN(date.getTime())) return 'Not specified';
-        return date.toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? 'Not specified' : d.toLocaleString('en-US', {
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
         });
-    } catch (e) {
-        return 'Not specified';
-    }
+    } catch (e) { return 'Not specified'; }
 }
 
-function formatDateTimeForInput(dateTimeString) {
-    if (!dateTimeString) return '';
+function formatDateTimeForInput(s) {
+    if (!s) return '';
     try {
-        const date = new Date(dateTimeString);
-        if (isNaN(date.getTime())) return '';
-        return date.toISOString().slice(0, 16);
-    } catch (e) {
-        return '';
-    }
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
+    } catch (e) { return ''; }
 }
 
-function getEligibleDepartmentsDisplay(departmentsJson) {
-    if (!departmentsJson) return 'All departments';
+function getEligibleDepartmentsDisplay(deps) {
+    if (!deps) return 'All departments';
     try {
-        let departments;
-        if (typeof departmentsJson === 'string') {
-            departments = JSON.parse(departmentsJson);
-        } else if (Array.isArray(departmentsJson)) {
-            departments = departmentsJson;
-        } else {
-            return 'All departments';
-        }
-        return departments.length > 0 ? departments.join(', ') : 'All departments';
-    } catch {
-        return 'All departments';
-    }
+        let d = typeof deps === 'string' ? JSON.parse(deps) : Array.isArray(deps) ? deps : [];
+        return d.length > 0 ? d.join(', ') : 'All departments';
+    } catch { return 'All departments'; }
 }
 
 function showRecruitmentMessage(message, type) {
-    let messageDiv = document.getElementById('recruitmentMessage');
-    if (!messageDiv) {
-        messageDiv = document.createElement('div');
-        messageDiv.id = 'recruitmentMessage';
-        messageDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 1rem 1.5rem;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            z-index: 1000;
-            max-width: 400px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease;
-        `;
-        document.body.appendChild(messageDiv);
+    let div = document.getElementById('recruitmentMessage');
+    if (!div) {
+        div = document.createElement('div');
+        div.id = 'recruitmentMessage';
+        div.style.cssText = 'position:fixed;top:20px;right:20px;padding:1rem 1.5rem;border-radius:12px;color:white;font-weight:600;z-index:10000;max-width:450px;box-shadow:0 10px 30px rgba(0,0,0,0.2);transition:all 0.3s ease;font-size:0.9rem;';
+        document.body.appendChild(div);
     }
-
-    messageDiv.textContent = message;
-    messageDiv.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
-    messageDiv.style.display = 'block';
-
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 5000);
+    div.textContent = message;
+    div.style.background = type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' :
+        type === 'error' ? 'linear-gradient(135deg, #ef4444, #dc2626)' :
+            'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+    div.style.display = 'block';
+    setTimeout(() => { div.style.display = 'none'; }, 5000);
 }
 
 // =============================================
@@ -814,16 +672,14 @@ function initializeStudentFilterPage() {
 
 window.applyFilters = async function () {
     try {
-        const filters = getCurrentFilters();
+        const f = getCurrentFilters();
+        const q = new URLSearchParams();
+        if (f.department) q.append('department', f.department);
+        if (f.minCgpa) q.append('minCgpa', f.minCgpa);
+        if (f.maxBacklogs !== null) q.append('maxBacklogs', f.maxBacklogs);
+        if (f.batch) q.append('batch', f.batch);
 
-        const queryParams = new URLSearchParams();
-        if (filters.department) queryParams.append('department', filters.department);
-        if (filters.minCgpa) queryParams.append('minCgpa', filters.minCgpa);
-        if (filters.maxBacklogs !== null) queryParams.append('maxBacklogs', filters.maxBacklogs);
-        if (filters.batch) queryParams.append('batch', filters.batch);
-
-        const response = await apiFetch(`/api/students/filter?${queryParams}`);
-
+        const response = await apiFetch(`/api/students/filter?${q}`);
         if (response.ok) {
             const students = await response.json();
             displayFilteredStudents(students);
@@ -833,34 +689,29 @@ window.applyFilters = async function () {
             showStudentFilterMessage('Error applying filters', 'error');
         }
     } catch (error) {
-        console.error('Network error:', error);
         showStudentFilterMessage('Network error', 'error');
     }
 };
 
 window.resetFilters = function () {
-    const fields = ['departmentFilter', 'cgpaFilter', 'batchFilter', 'backlogsFilter'];
-    fields.forEach(id => {
+    ['departmentFilter', 'cgpaFilter', 'batchFilter', 'backlogsFilter'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
-
     loadAllStudents();
     showStudentFilterMessage('Filters reset', 'success');
 };
 
 window.exportFilteredStudents = async function () {
     try {
-        const filters = getCurrentFilters();
-        const queryParams = new URLSearchParams();
+        const f = getCurrentFilters();
+        const q = new URLSearchParams();
+        if (f.department) q.append('department', f.department);
+        if (f.minCgpa) q.append('minCgpa', f.minCgpa);
+        if (f.maxBacklogs !== null) q.append('maxBacklogs', f.maxBacklogs);
+        if (f.batch) q.append('batch', f.batch);
 
-        if (filters.department) queryParams.append('department', filters.department);
-        if (filters.minCgpa) queryParams.append('minCgpa', filters.minCgpa);
-        if (filters.maxBacklogs !== null) queryParams.append('maxBacklogs', filters.maxBacklogs);
-        if (filters.batch) queryParams.append('batch', filters.batch);
-
-        const response = await apiFetch(`/api/students/export/filtered?${queryParams}`);
-
+        const response = await apiFetch(`/api/students/export/filtered?${q}`);
         if (response.ok) {
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
@@ -872,87 +723,56 @@ window.exportFilteredStudents = async function () {
             a.click();
             window.URL.revokeObjectURL(url);
             document.body.removeChild(a);
-            showStudentFilterMessage('Excel file downloaded successfully!', 'success');
+            showStudentFilterMessage('Downloaded!', 'success');
         } else {
-            showStudentFilterMessage('Failed to export students. Please try again.', 'error');
+            showStudentFilterMessage('Export failed', 'error');
         }
     } catch (error) {
-        console.error('Error exporting students:', error);
-        showStudentFilterMessage('Network error while exporting. Please try again.', 'error');
+        showStudentFilterMessage('Network error', 'error');
     }
 };
 
 window.getCurrentFilters = function () {
-    const department = document.getElementById('departmentFilter')?.value || '';
-    const cgpaFilter = document.getElementById('cgpaFilter')?.value || '';
-    const batch = document.getElementById('batchFilter')?.value || '';
-    const backlogsFilter = document.getElementById('backlogsFilter')?.value || '';
-
     return {
-        department: department || null,
-        minCgpa: cgpaFilter ? parseFloat(cgpaFilter) : null,
-        batch: batch || null,
-        maxBacklogs: backlogsFilter !== '' ? parseInt(backlogsFilter) : null
+        department: document.getElementById('departmentFilter')?.value || null,
+        minCgpa: document.getElementById('cgpaFilter')?.value ? parseFloat(document.getElementById('cgpaFilter').value) : null,
+        batch: document.getElementById('batchFilter')?.value || null,
+        maxBacklogs: document.getElementById('backlogsFilter')?.value !== '' && document.getElementById('backlogsFilter')?.value !== undefined
+            ? parseInt(document.getElementById('backlogsFilter').value) : null
     };
 };
 
 window.displayFilteredStudents = function (students) {
-    const studentsGrid = document.getElementById('studentsGrid');
-    if (!studentsGrid) return;
+    const grid = document.getElementById('studentsGrid');
+    if (!grid) return;
 
     if (!students || students.length === 0) {
-        studentsGrid.innerHTML = `
+        grid.innerHTML = `
             <div class="no-results">
                 <span class="material-symbols-outlined">search_off</span>
                 <h3>No Students Found</h3>
                 <p>Try adjusting your filters to see more results.</p>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
-    studentsGrid.innerHTML = students.map(student => `
+    grid.innerHTML = students.map(s => `
         <div class="student-card">
             <div class="student-header">
-                <div class="student-avatar">
-                    ${getStudentInitials(student.studentFirstName, student.studentLastName)}
-                </div>
+                <div class="student-avatar">${getStudentInitials(s.studentFirstName, s.studentLastName)}</div>
                 <div class="student-info">
-                    <h3>${student.studentFirstName || ''} ${student.studentLastName || ''}</h3>
-                    <p class="student-id">${student.studentAdmissionNumber || ''}</p>
+                    <h3>${s.studentFirstName || ''} ${s.studentLastName || ''}</h3>
+                    <p class="student-id">${s.studentAdmissionNumber || ''}</p>
                 </div>
             </div>
             <div class="student-details">
-                <div class="detail-row">
-                    <span class="label">Department:</span>
-                    <span class="value">${student.department || 'Not specified'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Batch:</span>
-                    <span class="value">${student.batch || 'Not specified'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">CGPA:</span>
-                    <span class="value ${getCgpaClass(student.cgpa)}">${student.cgpa || 'Not specified'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Backlogs:</span>
-                    <span class="value ${getBacklogsClass(student.backLogsCount)}">${student.backLogsCount || 0}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Email:</span>
-                    <span class="value">${student.emailId || 'Not specified'}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="label">Mobile:</span>
-                    <span class="value">${student.mobileNo || 'Not specified'}</span>
-                </div>
-                ${student.resumeLink ? `
-                <div class="detail-row">
-                    <span class="label">Resume:</span>
-                    <a href="${student.resumeLink}" target="_blank" class="resume-link">View Resume</a>
-                </div>
-                ` : ''}
+                <div class="detail-row"><span class="label">Department:</span><span class="value">${s.department || 'N/A'}</span></div>
+                <div class="detail-row"><span class="label">Batch:</span><span class="value">${s.batch || 'N/A'}</span></div>
+                <div class="detail-row"><span class="label">CGPA:</span><span class="value ${getCgpaClass(s.cgpa)}">${s.cgpa || 'N/A'}</span></div>
+                <div class="detail-row"><span class="label">Backlogs:</span><span class="value ${getBacklogsClass(s.backLogsCount)}">${s.backLogsCount || 0}</span></div>
+                <div class="detail-row"><span class="label">Email:</span><span class="value">${s.emailId || 'N/A'}</span></div>
+                <div class="detail-row"><span class="label">Mobile:</span><span class="value">${s.mobileNo || 'N/A'}</span></div>
+                ${s.resumeLink ? `<div class="detail-row"><span class="label">Resume:</span><a href="${s.resumeLink}" target="_blank" class="resume-link">View Resume</a></div>` : ''}
             </div>
         </div>
     `).join('');
@@ -981,7 +801,6 @@ window.getBacklogsClass = function (backlogs) {
 window.updateResultsSummary = function (count) {
     const resultsSummary = document.getElementById('resultsSummary');
     const totalStudents = document.getElementById('totalStudents');
-
     if (resultsSummary && totalStudents) {
         totalStudents.textContent = count;
         resultsSummary.style.display = 'block';
@@ -995,59 +814,26 @@ window.loadAllStudents = async function () {
             const students = await response.json();
             displayFilteredStudents(students);
             updateResultsSummary(students.length);
-        } else {
-            console.error('Failed to load students');
         }
     } catch (error) {
         console.error('Error loading students:', error);
-        displayFallbackStudents();
     }
-};
-
-window.displayFallbackStudents = function () {
-    const studentsGrid = document.getElementById('studentsGrid');
-    if (!studentsGrid) return;
-
-    studentsGrid.innerHTML = `
-        <div class="student-card">
-            <div class="student-header">
-                <div class="student-avatar">JD</div>
-                <div class="student-info">
-                    <h3>John Doe</h3>
-                    <p class="student-id">STU001</p>
-                </div>
-            </div>
-            <div class="student-details">
-                <div class="detail-row"><span class="label">Department:</span><span class="value">Computer Science</span></div>
-                <div class="detail-row"><span class="label">Batch:</span><span class="value">2024</span></div>
-                <div class="detail-row"><span class="label">CGPA:</span><span class="value excellent">8.7</span></div>
-                <div class="detail-row"><span class="label">Backlogs:</span><span class="value no-backlogs">0</span></div>
-                <div class="detail-row"><span class="label">Email:</span><span class="value">john.doe@example.com</span></div>
-            </div>
-        </div>
-    `;
 };
 
 window.showStudentFilterMessage = function (message, type) {
-    let messageDiv = document.getElementById('studentFilterMessage');
-    if (!messageDiv) {
-        messageDiv = document.createElement('div');
-        messageDiv.id = 'studentFilterMessage';
-        messageDiv.style.cssText = `
-            position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
-            border-radius: 8px; color: white; font-weight: 500;
-            z-index: 1000; max-width: 400px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-        `;
-        document.body.appendChild(messageDiv);
+    let div = document.getElementById('studentFilterMessage');
+    if (!div) {
+        div = document.createElement('div');
+        div.id = 'studentFilterMessage';
+        div.style.cssText = 'position:fixed;top:20px;right:20px;padding:1rem 1.5rem;border-radius:12px;color:white;font-weight:600;z-index:10000;max-width:400px;box-shadow:0 10px 30px rgba(0,0,0,0.2);';
+        document.body.appendChild(div);
     }
-
-    messageDiv.textContent = message;
-    messageDiv.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
-    messageDiv.style.display = 'block';
-
-    setTimeout(() => {
-        messageDiv.style.display = 'none';
-    }, 5000);
+    div.textContent = message;
+    div.style.background = type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' :
+        type === 'error' ? 'linear-gradient(135deg, #ef4444, #dc2626)' :
+            'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+    div.style.display = 'block';
+    setTimeout(() => { div.style.display = 'none'; }, 5000);
 };
 
 // =============================================
@@ -1059,6 +845,7 @@ window.showStudentFilterMessage = function (message, type) {
     const excelUpload = document.getElementById('excelUpload');
     const sendOALinksBtn = document.getElementById('sendOALinks');
     const scheduleInterviewsBtn = document.getElementById('scheduleInterviews');
+    const finalSelectionBtn = document.getElementById('finalSelection');
 
     let uploadedAdmissionNumbers = [];
 
@@ -1116,6 +903,17 @@ window.showStudentFilterMessage = function (message, type) {
         });
     }
 
+    if (finalSelectionBtn) {
+        finalSelectionBtn.addEventListener('click', function () {
+            if (uploadedAdmissionNumbers.length === 0) {
+                showNotification('Please upload a student list first', 'warning');
+                return;
+            }
+            showFinalSelectionModal();
+        });
+    }
+
+    // ---- File Upload Handler ----
     function handleFileUpload(file) {
         const formData = new FormData();
         formData.append('file', file);
@@ -1132,7 +930,7 @@ window.showStudentFilterMessage = function (message, type) {
                 if (data.success) {
                     uploadedAdmissionNumbers = data.admissionNumbers;
                     showNotification(`Successfully loaded ${data.count} students`, 'success');
-                    updateUploadArea(`Loaded ${data.count} students`);
+                    updateUploadArea(`Loaded ${data.count} students from file`);
                 } else {
                     showNotification(data.message, 'error');
                 }
@@ -1148,13 +946,54 @@ window.showStudentFilterMessage = function (message, type) {
         const uploadText = uploadArea?.querySelector('.upload-text');
         if (uploadText) {
             uploadText.innerHTML = `
-                <h4>Student List Ready</h4>
-                <p>${message}</p>
-                <p class="text-sm">Click "Select File" to upload a different file</p>
+                <h4 style="color:#10b981; margin-bottom:0.5rem;">✓ Student List Ready</h4>
+                <p style="font-weight:600; color:#1e293b;">${message}</p>
+                <p class="text-sm" style="color:#64748b;">Click "Select File" to upload a different file</p>
             `;
         }
     }
 
+    function resetUploadArea() {
+        const uploadText = uploadArea?.querySelector('.upload-text');
+        if (uploadText) {
+            uploadText.innerHTML = `
+                <h4>Upload Student List</h4>
+                <p>Drag & drop your Excel file here or click to browse</p>
+                <p class="text-sm">Supported formats: .xlsx, .xls, .csv</p>
+            `;
+        }
+        uploadedAdmissionNumbers = [];
+    }
+
+    // ---- Build Event ID Dropdown ----
+    function buildEventIdField() {
+        if (currentEvents.length === 0) {
+            return `
+                <div class="form-group">
+                    <label>Event ID *</label>
+                    <input type="text" id="bulkEventId" required placeholder="Enter Event ID (e.g., GOOGLE-110226153045)">
+                    <p style="font-size:0.75rem; color:#ef4444; margin-top:0.25rem;">No events loaded. Type the Event ID manually.</p>
+                </div>
+            `;
+        }
+
+        const options = currentEvents.map(e =>
+            `<option value="${e.eventId}">${e.eventId} — ${e.eventName} (${e.jobRole || 'N/A'})</option>`
+        ).join('');
+
+        return `
+            <div class="form-group">
+                <label>Select Event *</label>
+                <select id="bulkEventId" required>
+                    <option value="">-- Choose an Event --</option>
+                    ${options}
+                </select>
+                <p style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">Select the event for which this action applies</p>
+            </div>
+        `;
+    }
+
+    // ---- OA Modal ----
     function showOAModal() {
         const modalHtml = `
             <div class="modal-overlay active" id="oaModal">
@@ -1165,40 +1004,20 @@ window.showStudentFilterMessage = function (message, type) {
                     </div>
                     <div class="modal-body">
                         <form id="oaForm">
-                            <div class="form-group">
-                                <label>Event Name *</label>
-                                <input type="text" id="oaEventName" required placeholder="e.g., Google Online Assessment Round 1">
-                            </div>
+                            ${buildEventIdField()}
                             <div class="form-group">
                                 <label>OA Link *</label>
                                 <input type="url" id="oaLink" required placeholder="https://assessment-platform.com/test/abc123">
                             </div>
                             <div class="form-group">
-                                <label>Description</label>
-                                <textarea id="oaDescription" rows="4" placeholder="Instructions for the online assessment..."></textarea>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Start Date & Time *</label>
-                                    <input type="datetime-local" id="oaStartDate" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>End Date & Time *</label>
-                                    <input type="datetime-local" id="oaEndDate" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Job Role</label>
-                                    <input type="text" id="oaJobRole" placeholder="e.g., Software Engineer Intern">
-                                </div>
-                                <div class="form-group">
-                                    <label>Expected CGPA</label>
-                                    <input type="number" id="oaExpectedCgpa" step="0.1" min="0" max="10" placeholder="7.5">
-                                </div>
+                                <label>Description / Instructions</label>
+                                <textarea id="oaDescription" rows="3" placeholder="Instructions for the online assessment..."></textarea>
                             </div>
                             <div class="form-info">
-                                <p><strong>Students to receive OA:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p><strong>Students in uploaded list:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p style="font-size:0.75rem; color:#dc2626; margin-top:0.5rem;">
+                                    ⚠ Students registered for this event but NOT in the uploaded list will be marked as <strong>REJECTED</strong>.
+                                </p>
                             </div>
                         </form>
                     </div>
@@ -1211,84 +1030,7 @@ window.showStudentFilterMessage = function (message, type) {
         `;
 
         document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const now = new Date();
-        const minDateTime = now.toISOString().slice(0, 16);
-        setTimeout(() => {
-            const startDateInput = document.getElementById('oaStartDate');
-            const endDateInput = document.getElementById('oaEndDate');
-            if (startDateInput) startDateInput.min = minDateTime;
-            if (endDateInput) endDateInput.min = minDateTime;
-            setupOAModal();
-        }, 10);
-    }
-
-    function showInterviewModal() {
-        const modalHtml = `
-            <div class="modal-overlay active" id="interviewModal">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h3>Schedule Interviews</h3>
-                        <button class="modal-close" id="interviewModalClose">&times;</button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="interviewForm">
-                            <div class="form-group">
-                                <label>Event Name *</label>
-                                <input type="text" id="interviewEventName" required placeholder="e.g., Google Technical Interview Round 1">
-                            </div>
-                            <div class="form-group">
-                                <label>Interview Link / Venue *</label>
-                                <input type="text" id="interviewLink" required placeholder="https://meet.google.com/abc-xyz OR Conference Room A">
-                            </div>
-                            <div class="form-group">
-                                <label>Description</label>
-                                <textarea id="interviewDescription" rows="4" placeholder="Interview instructions..."></textarea>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Start Date & Time *</label>
-                                    <input type="datetime-local" id="interviewStartDate" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>End Date & Time *</label>
-                                    <input type="datetime-local" id="interviewEndDate" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Job Role</label>
-                                    <input type="text" id="interviewJobRole" placeholder="e.g., Senior Software Engineer">
-                                </div>
-                                <div class="form-group">
-                                    <label>Expected CGPA</label>
-                                    <input type="number" id="interviewExpectedCgpa" step="0.1" min="0" max="10" placeholder="8.0">
-                                </div>
-                            </div>
-                            <div class="form-info">
-                                <p><strong>Students to schedule interviews:</strong> ${uploadedAdmissionNumbers.length}</p>
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button class="btn btn-secondary" id="cancelInterviewBtn">Cancel</button>
-                        <button class="btn btn-primary" id="confirmInterviewBtn">Schedule Interviews</button>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-
-        const now = new Date();
-        const minDateTime = now.toISOString().slice(0, 16);
-        setTimeout(() => {
-            const startDateInput = document.getElementById('interviewStartDate');
-            const endDateInput = document.getElementById('interviewEndDate');
-            if (startDateInput) startDateInput.min = minDateTime;
-            if (endDateInput) endDateInput.min = minDateTime;
-            setupInterviewModal();
-        }, 10);
+        setTimeout(() => setupOAModal(), 10);
     }
 
     function setupOAModal() {
@@ -1306,34 +1048,95 @@ window.showStudentFilterMessage = function (message, type) {
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
 
         confirmBtn.addEventListener('click', function () {
-            const form = document.getElementById('oaForm');
-            if (!form || !form.checkValidity()) {
-                if (form) form.reportValidity();
+            const eventId = document.getElementById('bulkEventId')?.value;
+            const oaLink = document.getElementById('oaLink')?.value;
+
+            if (!eventId) {
+                showNotification('Please select or enter an Event ID', 'error');
                 return;
             }
-
-            const startDate = new Date(document.getElementById('oaStartDate').value);
-            const endDate = new Date(document.getElementById('oaEndDate').value);
-            if (endDate <= startDate) {
-                showNotification('End date must be after start date', 'error');
+            if (!oaLink) {
+                showNotification('Please enter the OA Link', 'error');
                 return;
             }
 
             const requestData = {
+                eventId: eventId,
                 studentAdmissionNumbers: uploadedAdmissionNumbers,
-                eventName: document.getElementById('oaEventName').value,
-                eventDescription: document.getElementById('oaDescription').value,
-                oaLink: document.getElementById('oaLink').value,
-                startDate: document.getElementById('oaStartDate').value + ':00',
-                endDate: document.getElementById('oaEndDate').value + ':00',
-                jobRole: document.getElementById('oaJobRole').value || null,
-                expectedCgpa: document.getElementById('oaExpectedCgpa').value ?
-                    parseFloat(document.getElementById('oaExpectedCgpa').value) : null
+                oaLink: oaLink,
+                eventDescription: document.getElementById('oaDescription')?.value || 'OA Link sent'
             };
 
             sendOALinksRequest(requestData);
             closeModal();
         });
+    }
+
+    function sendOALinksRequest(requestData) {
+        showLoading('Sending OA links & updating statuses...');
+
+        apiFetch('/api/bulk-operations/send-oa-links', {
+            method: 'POST',
+            headers: { 'Company-Name': getCurrentCompanyName() },
+            body: JSON.stringify(requestData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    resetUploadArea();
+                    // Refresh recruitment page if visible
+                    if (currentEvents.length > 0) loadCompanyEvents();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showNotification('Error sending OA links', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // ---- Interview Modal ----
+    function showInterviewModal() {
+        const modalHtml = `
+            <div class="modal-overlay active" id="interviewModal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Schedule Interviews</h3>
+                        <button class="modal-close" id="interviewModalClose">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="interviewForm">
+                            ${buildEventIdField()}
+                            <div class="form-group">
+                                <label>Interview Link / Venue *</label>
+                                <input type="text" id="interviewLink" required placeholder="https://meet.google.com/abc-xyz OR Conference Room A">
+                            </div>
+                            <div class="form-group">
+                                <label>Description / Instructions</label>
+                                <textarea id="interviewDescription" rows="3" placeholder="Interview instructions, what to prepare..."></textarea>
+                            </div>
+                            <div class="form-info">
+                                <p><strong>Students in uploaded list:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p style="font-size:0.75rem; color:#dc2626; margin-top:0.5rem;">
+                                    ⚠ Students not in this list (who were previously ATTEMPTED/REGISTERED) will be marked as <strong>REJECTED</strong>.
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancelInterviewBtn">Cancel</button>
+                        <button class="btn btn-primary" id="confirmInterviewBtn">Schedule Interviews</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        setTimeout(() => setupInterviewModal(), 10);
     }
 
     function setupInterviewModal() {
@@ -1351,29 +1154,23 @@ window.showStudentFilterMessage = function (message, type) {
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
 
         confirmBtn.addEventListener('click', function () {
-            const form = document.getElementById('interviewForm');
-            if (!form || !form.checkValidity()) {
-                if (form) form.reportValidity();
+            const eventId = document.getElementById('bulkEventId')?.value;
+            const interviewLink = document.getElementById('interviewLink')?.value;
+
+            if (!eventId) {
+                showNotification('Please select or enter an Event ID', 'error');
                 return;
             }
-
-            const startDate = new Date(document.getElementById('interviewStartDate').value);
-            const endDate = new Date(document.getElementById('interviewEndDate').value);
-            if (endDate <= startDate) {
-                showNotification('End date must be after start date', 'error');
+            if (!interviewLink) {
+                showNotification('Please enter the Interview Link / Venue', 'error');
                 return;
             }
 
             const requestData = {
+                eventId: eventId,
                 studentAdmissionNumbers: uploadedAdmissionNumbers,
-                eventName: document.getElementById('interviewEventName').value,
-                eventDescription: document.getElementById('interviewDescription').value,
-                oaLink: document.getElementById('interviewLink').value,
-                startDate: document.getElementById('interviewStartDate').value + ':00',
-                endDate: document.getElementById('interviewEndDate').value + ':00',
-                jobRole: document.getElementById('interviewJobRole').value || null,
-                expectedCgpa: document.getElementById('interviewExpectedCgpa').value ?
-                    parseFloat(document.getElementById('interviewExpectedCgpa').value) : null
+                oaLink: interviewLink,
+                eventDescription: document.getElementById('interviewDescription')?.value || 'Interview scheduled'
             };
 
             scheduleInterviewsRequest(requestData);
@@ -1381,42 +1178,12 @@ window.showStudentFilterMessage = function (message, type) {
         });
     }
 
-    function sendOALinksRequest(requestData) {
-        showLoading('Sending OA links and registering students...');
-
-        apiFetch('/api/bulk-operations/send-oa-links', {
-            method: 'POST',
-            headers: {
-                'Company-Name': getCurrentCompanyName()
-            },
-            body: JSON.stringify(requestData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                hideLoading();
-                if (data.success) {
-                    showNotification(data.message, 'success');
-                    uploadedAdmissionNumbers = [];
-                    resetUploadArea();
-                } else {
-                    showNotification(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                hideLoading();
-                showNotification('Error sending OA links', 'error');
-                console.error('Error:', error);
-            });
-    }
-
     function scheduleInterviewsRequest(requestData) {
-        showLoading('Scheduling interviews and registering students...');
+        showLoading('Scheduling interviews & updating statuses...');
 
         apiFetch('/api/bulk-operations/schedule-interviews', {
             method: 'POST',
-            headers: {
-                'Company-Name': getCurrentCompanyName()
-            },
+            headers: { 'Company-Name': getCurrentCompanyName() },
             body: JSON.stringify(requestData)
         })
             .then(response => response.json())
@@ -1424,8 +1191,8 @@ window.showStudentFilterMessage = function (message, type) {
                 hideLoading();
                 if (data.success) {
                     showNotification(data.message, 'success');
-                    uploadedAdmissionNumbers = [];
                     resetUploadArea();
+                    if (currentEvents.length > 0) loadCompanyEvents();
                 } else {
                     showNotification(data.message, 'error');
                 }
@@ -1437,17 +1204,105 @@ window.showStudentFilterMessage = function (message, type) {
             });
     }
 
-    function resetUploadArea() {
-        const uploadText = uploadArea?.querySelector('.upload-text');
-        if (uploadText) {
-            uploadText.innerHTML = `
-                <h4>Upload Student List</h4>
-                <p>Drag & drop your Excel file here or click to browse</p>
-                <p class="text-sm">Supported formats: .xlsx, .xls, .csv</p>
-            `;
-        }
+    // ---- Final Selection Modal ----
+    function showFinalSelectionModal() {
+        const modalHtml = `
+            <div class="modal-overlay active" id="finalSelectionModal">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);">
+                        <h3 style="color: #166534;">🎉 Final Selection</h3>
+                        <button class="modal-close" id="finalSelectionClose">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="finalSelectionForm">
+                            ${buildEventIdField()}
+                            <div class="form-info" style="background:#f0fdf4; border-color:#86efac;">
+                                <p style="color:#166534;"><strong>Students to be marked as SELECTED:</strong> ${uploadedAdmissionNumbers.length}</p>
+                                <p style="font-size:0.75rem; color:#dc2626; margin-top:0.5rem;">
+                                    ⚠ All other students who participated in this event but are NOT in this list will be marked as <strong>REJECTED</strong>.
+                                </p>
+                                <p style="font-size:0.75rem; color:#166534; margin-top:0.25rem;">
+                                    ✓ This action marks the final outcome of the recruitment drive.
+                                </p>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" id="cancelFinalSelectionBtn">Cancel</button>
+                        <button class="btn btn-success" id="confirmFinalSelectionBtn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                            ✓ Confirm Final Selection
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        setTimeout(() => setupFinalSelectionModal(), 10);
     }
 
+    function setupFinalSelectionModal() {
+        const modal = document.getElementById('finalSelectionModal');
+        const closeBtn = document.getElementById('finalSelectionClose');
+        const cancelBtn = document.getElementById('cancelFinalSelectionBtn');
+        const confirmBtn = document.getElementById('confirmFinalSelectionBtn');
+
+        if (!modal || !closeBtn || !cancelBtn || !confirmBtn) return;
+
+        function closeModal() { modal.remove(); }
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+        confirmBtn.addEventListener('click', function () {
+            const eventId = document.getElementById('bulkEventId')?.value;
+
+            if (!eventId) {
+                showNotification('Please select or enter an Event ID', 'error');
+                return;
+            }
+
+            if (!confirm(`Are you sure you want to finalize selection for event ${eventId}?\n\n${uploadedAdmissionNumbers.length} students will be marked as SELECTED.\nAll others will be marked as REJECTED.\n\nThis action cannot be easily undone.`)) {
+                return;
+            }
+
+            const requestData = {
+                eventId: eventId,
+                studentAdmissionNumbers: uploadedAdmissionNumbers
+            };
+
+            finalSelectionRequest(requestData);
+            closeModal();
+        });
+    }
+
+    function finalSelectionRequest(requestData) {
+        showLoading('Processing final selection...');
+
+        apiFetch('/api/bulk-operations/final-selection', {
+            method: 'POST',
+            body: JSON.stringify(requestData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                hideLoading();
+                if (data.success) {
+                    showNotification(data.message, 'success');
+                    resetUploadArea();
+                    if (currentEvents.length > 0) loadCompanyEvents();
+                } else {
+                    showNotification(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                hideLoading();
+                showNotification('Error processing final selection', 'error');
+                console.error('Error:', error);
+            });
+    }
+
+    // ---- Shared Utilities ----
     function getCurrentCompanyName() {
         try {
             const currentUser = sessionStorage.getItem('currentUser');
@@ -1461,7 +1316,7 @@ window.showStudentFilterMessage = function (message, type) {
         return 'Default Company';
     }
 
-    function showLoading(message = 'Loading...') {
+    function showLoading(message) {
         let loadingDiv = document.getElementById('loadingIndicator');
         if (!loadingDiv) {
             loadingDiv = document.createElement('div');
@@ -1471,7 +1326,7 @@ window.showStudentFilterMessage = function (message, type) {
                 transform: translate(-50%, -50%);
                 background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
                 color: white; padding: 2rem 3rem; border-radius: 16px;
-                z-index: 9999; font-weight: 600;
+                z-index: 99999; font-weight: 600;
                 box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
                 display: flex; align-items: center; gap: 1rem; font-size: 1.1rem;
             `;
@@ -1480,7 +1335,7 @@ window.showStudentFilterMessage = function (message, type) {
 
         loadingDiv.innerHTML = `
             <div class="loading-spinner"></div>
-            <span>${message}</span>
+            <span>${message || 'Loading...'}</span>
         `;
         loadingDiv.style.display = 'flex';
     }
@@ -1490,7 +1345,7 @@ window.showStudentFilterMessage = function (message, type) {
         if (loadingDiv) loadingDiv.style.display = 'none';
     }
 
-    function showNotification(message, type = 'info') {
+    function showNotification(message, type) {
         const notification = document.createElement('div');
         const bgColors = {
             success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
@@ -1505,22 +1360,25 @@ window.showStudentFilterMessage = function (message, type) {
         notification.style.cssText = `
             position: fixed; top: 20px; right: 20px;
             padding: 1rem 1.5rem; border-radius: 12px;
-            color: white; font-weight: 600; z-index: 1000; max-width: 400px;
+            color: white; font-weight: 600; z-index: 100000; max-width: 450px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             border-left: 4px solid ${borderColors[type] || borderColors.info};
             background: ${bgColors[type] || bgColors.info};
-            transform: translateX(100%); transition: transform 0.3s ease;
+            transform: translateX(120%); transition: transform 0.3s ease;
+            font-size: 0.9rem;
         `;
         notification.textContent = message;
         document.body.appendChild(notification);
 
-        setTimeout(() => { notification.style.transform = 'translateX(0)'; }, 100);
+        // Slide in
+        setTimeout(() => { notification.style.transform = 'translateX(0)'; }, 50);
 
+        // Slide out and remove
         setTimeout(() => {
-            notification.style.transform = 'translateX(100%)';
+            notification.style.transform = 'translateX(120%)';
             setTimeout(() => {
                 if (notification.parentNode) notification.parentNode.removeChild(notification);
             }, 300);
-        }, 5000);
+        }, 6000);
     }
 })();

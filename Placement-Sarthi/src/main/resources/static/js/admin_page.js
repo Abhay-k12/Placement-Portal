@@ -3,22 +3,22 @@
 // Sends session cookie with every request
 // =============================================
 function apiFetch(url, options = {}) {
-    const defaultOptions = {
-        credentials: 'same-origin',
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        },
-        ...options
+    const mergedHeaders = {
+        'Content-Type': 'application/json',
+        ...(options.headers || {})
     };
 
-    // Don't set Content-Type for FormData (file uploads)
+    const defaultOptions = {
+        credentials: 'same-origin',
+        ...options,
+        headers: mergedHeaders
+    };
+
     if (options.body instanceof FormData) {
         delete defaultOptions.headers['Content-Type'];
     }
 
     return fetch(url, defaultOptions).then(response => {
-        // If server returns 401, redirect to login
         if (response.status === 401) {
             sessionStorage.clear();
             window.location.href = 'login_page.html';
@@ -1215,7 +1215,7 @@ async function loadEventsByTab(tabType) {
 
         if (response.ok) {
             const events = await response.json();
-            updateEventCards(events);
+            await updateEventCards(events);
         } else {
             await loadAllEventsAndFilter(tabType);
         }
@@ -1231,7 +1231,7 @@ async function loadAllEventsAndFilter(tabType) {
         if (response.ok) {
             const allEvents = await response.json();
             const filteredEvents = filterEventsByDate(allEvents, tabType);
-            updateEventCards(filteredEvents);
+            await updateEventCards(filteredEvents);
         } else {
             throw new Error('Failed to load events');
         }
@@ -1368,7 +1368,8 @@ function getSelectedDepartments() {
     return departments.length > 0 ? departments : null;
 }
 
-function updateEventCards(events) {
+// --- REPLACED: Now async, fetches eligible/registered counts for each event ---
+async function updateEventCards(events) {
     const eventCardsContainer = document.getElementById('eventCards');
     if (!eventCardsContainer) return;
 
@@ -1384,13 +1385,19 @@ function updateEventCards(events) {
         return;
     }
 
-    events.forEach(event => {
-        const eventCard = createEventCard(event);
-        eventCardsContainer.appendChild(eventCard);
+    const cardPromises = events.map(async (event) => {
+        const [eligibleCount, registeredCount] = await Promise.all([
+            fetchEligibleCount(event),
+            fetchRegisteredCount(event.eventId)
+        ]);
+        return createEventCard(event, eligibleCount, registeredCount);
     });
+
+    const cards = await Promise.all(cardPromises);
+    cards.forEach(card => eventCardsContainer.appendChild(card));
 }
 
-function createEventCard(event) {
+function createEventCard(event, eligibleCount, registeredCount) {
     const card = document.createElement('div');
     card.className = 'event-card';
     card.style = 'background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; transition: all 0.3s ease;';
@@ -1422,8 +1429,15 @@ function createEventCard(event) {
         statusText = 'COMPLETED';
     }
 
-    const companyInitial = event.organizingCompany.charAt(0).toUpperCase();
+    const companyInitial = event.organizingCompany ? event.organizingCompany.charAt(0).toUpperCase() : 'C';
     const safeEventId = String(event.eventId).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+    const regPercent = eligibleCount > 0 ? Math.min(100, Math.round((registeredCount / eligibleCount) * 100)) : 0;
+    let progressColor = '#3b82f6';
+    if (regPercent >= 80) progressColor = '#10b981';
+    else if (regPercent >= 50) progressColor = '#f59e0b';
+    else if (regPercent >= 25) progressColor = '#3b82f6';
+    else progressColor = '#6b7280';
 
     card.innerHTML = `
         <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
@@ -1431,22 +1445,50 @@ function createEventCard(event) {
                 ${companyInitial}
             </div>
             <div style="flex: 1;">
-                <h3 style="margin: 0 0 0.25rem 0; color: #1e293b; font-size: 1.125rem; font-weight: 600;">${event.organizingCompany}</h3>
+                <h3 style="margin: 0 0 0.25rem 0; color: #1e293b; font-size: 1.125rem; font-weight: 600;">${event.organizingCompany || 'Unknown'}</h3>
                 <p style="margin: 0; color: #64748b; font-size: 0.875rem;">${event.jobRole || 'Not specified'}</p>
             </div>
             <span style="${statusStyle} padding: 0.375rem 0.75rem; border-radius: 8px; font-size: 0.75rem; font-weight: 600;">${statusText}</span>
         </div>
+
         <div style="margin-bottom: 1rem;">
-            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Event:</strong> ${event.eventName}</p>
+            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Event:</strong> ${event.eventName || 'N/A'}</p>
             <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Reg Start:</strong> ${regStart}</p>
             <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Reg End:</strong> ${regEnd}</p>
-            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Mode:</strong> ${event.eventMode}</p>
-            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>CGPA:</strong> ${event.expectedCgpa || 'Not specified'}</p>
+            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>Mode:</strong> ${event.eventMode || 'N/A'}</p>
+            <p style="margin: 0 0 0.5rem 0; color: #374151; font-size: 0.875rem;"><strong>CGPA:</strong> ${event.expectedCgpa || 'No barrier'}</p>
             <p style="margin: 0; color: #374151; font-size: 0.875rem;"><strong>Package:</strong> ${event.expectedPackage ? '₹' + event.expectedPackage + ' LPA' : 'Not specified'}</p>
         </div>
+
+        <!-- Eligible / Registered Counts -->
+        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border: 1px solid #bae6fd; border-radius: 12px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #0369a1;">${eligibleCount}</div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Eligible</div>
+                </div>
+                <div style="width: 1px; height: 40px; background: #bae6fd;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #16a34a;">${registeredCount}</div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Registered</div>
+                </div>
+                <div style="width: 1px; height: 40px; background: #bae6fd;"></div>
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 1.5rem; font-weight: 800; color: #7c3aed;">${regPercent}%</div>
+                    <div style="font-size: 0.7rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Fill Rate</div>
+                </div>
+            </div>
+            <div style="height: 6px; background: #e0e7ff; border-radius: 3px; overflow: hidden;">
+                <div style="height: 100%; width: ${regPercent}%; background: ${progressColor}; border-radius: 3px; transition: width 1s ease;"></div>
+            </div>
+        </div>
+
         <div style="display: flex; gap: 0.5rem;">
             <button onclick="viewEvent('${safeEventId}')" style="flex: 1; background: #3b82f6; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">View</button>
             <button onclick="editEvent('${safeEventId}')" style="flex: 1; background: #f59e0b; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Edit</button>
+            <button onclick="openDriveStats('${safeEventId}', '${(event.eventName || '').replace(/'/g, "\\'")}', '${(event.organizingCompany || '').replace(/'/g, "\\'")}')" style="flex: 1; background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 600; box-shadow: 0 2px 4px rgba(124,58,237,0.3);">
+                Drive Stats
+            </button>
             <button onclick="manageStudents('${safeEventId}')" style="flex: 1; background: #10b981; color: white; padding: 0.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem; font-weight: 500;">Manage</button>
         </div>
     `;
@@ -1496,6 +1538,410 @@ function filterEventsByCompany(company) {
             }
         }
     });
+}
+
+// =============================================
+// 6b. NEW HELPER FUNCTIONS (Eligible/Registered counts)
+// =============================================
+
+async function fetchEligibleCount(event) {
+    try {
+        const queryParams = new URLSearchParams();
+        if (event.expectedCgpa) queryParams.append('minCgpa', event.expectedCgpa);
+        if (event.eligibleDepartments) {
+            let depts = event.eligibleDepartments;
+            if (typeof depts === 'string') {
+                try { depts = JSON.parse(depts); } catch (e) { depts = []; }
+            }
+            if (Array.isArray(depts) && depts.length > 0) {
+                queryParams.append('department', depts[0]);
+            }
+        }
+
+        const response = await apiFetch(`/api/students/filter?${queryParams}`);
+        if (response.ok) {
+            const students = await response.json();
+            return Array.isArray(students) ? students.length : 0;
+        }
+        return 0;
+    } catch (error) {
+        console.error('Error fetching eligible count:', error);
+        return 0;
+    }
+}
+
+async function fetchRegisteredCount(eventId) {
+    try {
+        const response = await apiFetch(`/api/participations/event/${eventId}`);
+        if (response.ok) {
+            const participations = await response.json();
+            return Array.isArray(participations) ? participations.length : 0;
+        }
+        return 0;
+    } catch (error) {
+        console.error('Error fetching registered count for event', eventId, ':', error);
+        return 0;
+    }
+}
+
+// Add this to fetchDriveStats to resolve student names
+async function fetchDriveStats(eventId) {
+    try {
+        const response = await apiFetch(`/api/participations/event/${eventId}`);
+        if (!response.ok) {
+            return { registered: 0, oaSent: 0, interview: 0, selected: 0, rejected: 0, total: 0, participations: [] };
+        }
+        const participations = await response.json();
+
+        // If student names are missing, fetch them individually
+        const needsStudentData = participations.some(p => {
+            const s = p.student || {};
+            return !s.studentFirstName && !p.studentFirstName && !p.firstName;
+        });
+
+        if (needsStudentData) {
+            // Batch fetch all students
+            try {
+                const studentsResponse = await apiFetch('/api/students');
+                if (studentsResponse.ok) {
+                    const allStudents = await studentsResponse.json();
+                    const studentMap = {};
+                    allStudents.forEach(s => {
+                        studentMap[s.studentAdmissionNumber] = s;
+                    });
+
+                    // Attach student data to participations
+                    participations.forEach(p => {
+                        const admNo = p.studentAdmissionNumber || (p.student && p.student.studentAdmissionNumber);
+                        if (admNo && studentMap[admNo]) {
+                            p.student = studentMap[admNo];
+                        }
+                    });
+                }
+            } catch (e) {
+                console.warn('Could not fetch student details:', e);
+            }
+        }
+
+        const stats = {
+            registered: 0, oaSent: 0, interview: 0, selected: 0, rejected: 0,
+            total: participations.length, participations: participations
+        };
+
+        participations.forEach(p => {
+            const status = (p.participationStatus || p.status || 'REGISTERED').toUpperCase();
+            switch (status) {
+                case 'REGISTERED': stats.registered++; break;
+                case 'OA_SENT': case 'ATTEMPTED': stats.oaSent++; break;
+                case 'INTERVIEW': stats.interview++; break;
+                case 'SELECTED': stats.selected++; break;
+                case 'REJECTED': case 'ABSENT': stats.rejected++; break;
+                default: stats.registered++; break;
+            }
+        });
+
+        return stats;
+    } catch (error) {
+        console.error('Error fetching drive stats:', error);
+        return { registered: 0, oaSent: 0, interview: 0, selected: 0, rejected: 0, total: 0, participations: [] };
+    }
+}
+
+// =============================================
+// 6c. DRIVE STATS MODAL (FIXED)
+// =============================================
+
+async function openDriveStats(eventId, eventName, companyName) {
+    const loadingModalHtml = `
+        <div class="modal-overlay active" id="driveStatsModal" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:9999; padding:2rem;">
+            <div style="background:white; border-radius:16px; width:100%; max-width:750px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display:flex; align-items:center; justify-content:center; padding:3rem;">
+                    <div style="text-align:center; color:#64748b;">
+                        <span class="material-symbols-outlined" style="font-size:3rem; display:block; margin-bottom:1rem; animation:spin 1s linear infinite;">refresh</span>
+                        <h3 style="margin:0;">Loading Drive Statistics...</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', loadingModalHtml);
+
+    try {
+        const stats = await fetchDriveStats(eventId);
+        const modal = document.getElementById('driveStatsModal');
+        if (!modal) return;
+
+        const funnelStages = [
+            { label: 'Registered', count: stats.total, color: '#3b82f6', bgColor: '#dbeafe' },
+            { label: 'OA Sent', count: stats.oaSent, color: '#f59e0b', bgColor: '#fef3c7' },
+            { label: 'Interview', count: stats.interview, color: '#8b5cf6', bgColor: '#ede9fe' },
+            { label: 'Selected', count: stats.selected, color: '#10b981', bgColor: '#dcfce7' },
+            { label: 'Rejected', count: stats.rejected, color: '#ef4444', bgColor: '#fee2e2' }
+        ];
+
+        const maxCount = Math.max(stats.total, 1);
+
+        // FIX 1: Removed ${stage.icon} — no icon property exists
+        const funnelHtml = funnelStages.map(stage => {
+            const widthPercent = Math.max(20, Math.round((stage.count / maxCount) * 100));
+            return `
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:0.75rem;">
+                    <div style="width:100px; text-align:right; font-size:0.8rem; font-weight:600; color:#374151;">
+                        ${stage.label}
+                    </div>
+                    <div style="flex:1; position:relative;">
+                        <div style="height:36px; background:${stage.bgColor}; border-radius:8px; overflow:hidden; border:1px solid ${stage.color}20;">
+                            <div style="height:100%; width:${widthPercent}%; background:linear-gradient(135deg, ${stage.color}dd, ${stage.color}); border-radius:7px; display:flex; align-items:center; justify-content:center; transition:width 1s ease; min-width:40px;">
+                                <span style="color:white; font-weight:700; font-size:0.875rem; text-shadow:0 1px 2px rgba(0,0,0,0.2);">${stage.count}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        const oaRate = stats.total > 0 ? Math.round((stats.oaSent / stats.total) * 100) : 0;
+        const interviewRate = stats.oaSent > 0 ? Math.round((stats.interview / stats.oaSent) * 100) : 0;
+        const selectionRate = stats.total > 0 ? Math.round((stats.selected / stats.total) * 100) : 0;
+
+        modal.innerHTML = `
+            <div style="background:white; border-radius:16px; width:100%; max-width:750px; max-height:90vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:1.5rem 2rem; border-bottom:1px solid #e5e7eb; background:linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius:16px 16px 0 0;">
+                    <div>
+                        <h3 style="margin:0 0 0.25rem 0; font-size:1.25rem; font-weight:700; color:#1e293b;">Drive Statistics</h3>
+                        <p style="margin:0; color:#64748b; font-size:0.875rem;">${companyName} — ${eventName}</p>
+                    </div>
+                    <button onclick="closeDriveStats()" style="background:none; border:none; font-size:1.5rem; color:#64748b; cursor:pointer; width:36px; height:36px; display:flex; align-items:center; justify-content:center; border-radius:8px;">×</button>
+                </div>
+
+                <div style="padding:1.5rem 2rem;">
+                    <div style="display:grid; grid-template-columns:repeat(5, 1fr); gap:0.75rem; margin-bottom:2rem;">
+                        <div style="text-align:center; padding:1rem 0.5rem; background:#dbeafe; border-radius:12px; border:1px solid #93c5fd;">
+                            <div style="font-size:1.5rem; font-weight:800; color:#1d4ed8;">${stats.total}</div>
+                            <div style="font-size:0.65rem; color:#1e40af; font-weight:600; text-transform:uppercase;">Total</div>
+                        </div>
+                        <div style="text-align:center; padding:1rem 0.5rem; background:#fef3c7; border-radius:12px; border:1px solid #fcd34d;">
+                            <div style="font-size:1.5rem; font-weight:800; color:#b45309;">${stats.oaSent}</div>
+                            <div style="font-size:0.65rem; color:#92400e; font-weight:600; text-transform:uppercase;">OA Sent</div>
+                        </div>
+                        <div style="text-align:center; padding:1rem 0.5rem; background:#ede9fe; border-radius:12px; border:1px solid #c4b5fd;">
+                            <div style="font-size:1.5rem; font-weight:800; color:#6d28d9;">${stats.interview}</div>
+                            <div style="font-size:0.65rem; color:#5b21b6; font-weight:600; text-transform:uppercase;">Interview</div>
+                        </div>
+                        <div style="text-align:center; padding:1rem 0.5rem; background:#dcfce7; border-radius:12px; border:1px solid #86efac;">
+                            <div style="font-size:1.5rem; font-weight:800; color:#16a34a;">${stats.selected}</div>
+                            <div style="font-size:0.65rem; color:#166534; font-weight:600; text-transform:uppercase;">Selected</div>
+                        </div>
+                        <div style="text-align:center; padding:1rem 0.5rem; background:#fee2e2; border-radius:12px; border:1px solid #fca5a5;">
+                            <div style="font-size:1.5rem; font-weight:800; color:#dc2626;">${stats.rejected}</div>
+                            <div style="font-size:0.65rem; color:#991b1b; font-weight:600; text-transform:uppercase;">Rejected</div>
+                        </div>
+                    </div>
+
+                    <div style="background:#f8fafc; border-radius:12px; padding:1.5rem; border:1px solid #e2e8f0; margin-bottom:1.5rem;">
+                        <h4 style="margin:0 0 1rem 0; color:#1e293b; font-size:1rem; font-weight:600;">Recruitment Funnel</h4>
+                        ${funnelHtml}
+                    </div>
+
+                    <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:1rem; margin-bottom:1.5rem;">
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; text-align:center;">
+                            <div style="font-size:1.25rem; font-weight:700; color:#f59e0b;">${oaRate}%</div>
+                            <div style="font-size:0.7rem; color:#64748b; font-weight:500;">OA Conversion</div>
+                        </div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; text-align:center;">
+                            <div style="font-size:1.25rem; font-weight:700; color:#8b5cf6;">${interviewRate}%</div>
+                            <div style="font-size:0.7rem; color:#64748b; font-weight:500;">Interview Conversion</div>
+                        </div>
+                        <div style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:1rem; text-align:center;">
+                            <div style="font-size:1.25rem; font-weight:700; color:#10b981;">${selectionRate}%</div>
+                            <div style="font-size:0.7rem; color:#64748b; font-weight:500;">Selection Rate</div>
+                        </div>
+                    </div>
+
+                    ${stats.participations.length > 0 ? `
+                    <div style="background:white; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; margin-bottom:1rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:1rem 1.5rem; background:#1a1a1a; color:white;">
+                            <h4 style="margin:0; font-size:0.9rem; font-weight:600;">Student Participation Details</h4>
+                            <select id="driveStatsFilter" onchange="filterDriveStatsTable(this.value)" style="padding:0.375rem 0.75rem; border-radius:6px; border:1px solid #4b5563; background:#374151; color:white; font-size:0.75rem; cursor:pointer;">
+                                <option value="all">All Status</option>
+                                <option value="REGISTERED">Registered</option>
+                                <option value="OA_SENT">OA Sent</option>
+                                <option value="INTERVIEW">Interview</option>
+                                <option value="SELECTED">Selected</option>
+                                <option value="REJECTED">Rejected</option>
+                            </select>
+                        </div>
+                        <div style="max-height:300px; overflow-y:auto;">
+                            <table style="width:100%; border-collapse:collapse;" id="driveStatsTable">
+                                <thead>
+                                    <tr style="background:#f8fafc; position:sticky; top:0;">
+                                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.75rem; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">Student</th>
+                                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.75rem; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">Admission No</th>
+                                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.75rem; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">Status</th>
+                                        <th style="padding:0.75rem 1rem; text-align:left; font-size:0.75rem; font-weight:600; color:#374151; border-bottom:1px solid #e5e7eb;">Registered On</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${stats.participations.map(p => {
+                                        // FIX 2: Robust student name resolution
+                                        // Try nested student object first, then top-level fields
+                                        const student = p.student || {};
+                                        const firstName = student.studentFirstName || p.studentFirstName || p.firstName || '';
+                                        const lastName = student.studentLastName || p.studentLastName || p.lastName || '';
+                                        const studentName = (firstName + ' ' + lastName).trim();
+
+                                        const admNo = student.studentAdmissionNumber
+                                            || p.studentAdmissionNumber
+                                            || p.admissionNumber
+                                            || 'N/A';
+
+                                        const status = (p.participationStatus || p.status || 'REGISTERED').toUpperCase();
+
+                                        const registeredDate = (p.createdAt || p.registeredAt)
+                                            ? new Date(p.createdAt || p.registeredAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                                            : 'N/A';
+
+                                        const statusColors = {
+                                            'REGISTERED': 'background:#dbeafe; color:#1d4ed8;',
+                                            'OA_SENT': 'background:#fef3c7; color:#b45309;',
+                                            'ATTEMPTED': 'background:#fef3c7; color:#b45309;',
+                                            'INTERVIEW': 'background:#ede9fe; color:#6d28d9;',
+                                            'SELECTED': 'background:#dcfce7; color:#16a34a;',
+                                            'REJECTED': 'background:#fee2e2; color:#dc2626;',
+                                            'ABSENT': 'background:#f3f4f6; color:#374151;'
+                                        };
+                                        const sStyle = statusColors[status] || statusColors['REGISTERED'];
+
+                                        // Use admission number as fallback display name
+                                        const displayName = studentName || admNo || 'Unknown';
+
+                                        return `
+                                            <tr data-status="${status}" style="transition:all 0.2s ease;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='white'">
+                                                <td style="padding:0.625rem 1rem; border-bottom:1px solid #f1f5f9; font-size:0.8rem; font-weight:500; color:#1e293b;">${displayName}</td>
+                                                <td style="padding:0.625rem 1rem; border-bottom:1px solid #f1f5f9; font-size:0.8rem; color:#64748b;">${admNo}</td>
+                                                <td style="padding:0.625rem 1rem; border-bottom:1px solid #f1f5f9;">
+                                                    <span style="${sStyle} padding:0.25rem 0.625rem; border-radius:6px; font-size:0.7rem; font-weight:600;">${status}</span>
+                                                </td>
+                                                <td style="padding:0.625rem 1rem; border-bottom:1px solid #f1f5f9; font-size:0.8rem; color:#64748b;">${registeredDate}</td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    ` : `
+                    <div style="text-align:center; padding:2rem; color:#64748b; background:#f8fafc; border-radius:12px; border:1px solid #e2e8f0;">
+                        <span class="material-symbols-outlined" style="font-size:2.5rem; display:block; margin-bottom:0.5rem; opacity:0.5;">group_off</span>
+                        <h4 style="margin:0 0 0.25rem 0;">No Participants Yet</h4>
+                        <p style="margin:0; font-size:0.875rem;">No students have registered for this event.</p>
+                    </div>
+                    `}
+                </div>
+
+                <div style="display:flex; align-items:center; justify-content:flex-end; gap:1rem; padding:1.25rem 2rem; border-top:1px solid #e5e7eb; background:#f8fafc; border-radius:0 0 16px 16px;">
+                    <button onclick="exportDriveStats('${eventId.replace(/'/g, "\\'")}')" style="background:linear-gradient(135deg, #10b981 0%, #059669 100%); color:white; padding:0.75rem 1.5rem; border:none; border-radius:8px; font-weight:600; font-size:0.875rem; cursor:pointer; box-shadow:0 2px 8px rgba(16,185,129,0.3); display:flex; align-items:center; gap:0.5rem;">
+                        <span class="material-symbols-outlined" style="font-size:1.1rem;">download</span>
+                        Export Excel
+                    </button>
+                    <button onclick="closeDriveStats()" style="background:#f1f5f9; color:#64748b; padding:0.75rem 1.5rem; border:1px solid #e2e8f0; border-radius:8px; font-weight:600; font-size:0.875rem; cursor:pointer;">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeDriveStats();
+        });
+
+    } catch (error) {
+        console.error('Error opening drive stats:', error);
+        closeDriveStats();
+        alert('Error loading drive statistics. Please try again.');
+    }
+}
+
+function closeDriveStats() {
+    const modal = document.getElementById('driveStatsModal');
+    if (modal) modal.remove();
+}
+
+function filterDriveStatsTable(status) {
+    const rows = document.querySelectorAll('#driveStatsTable tbody tr');
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        if (status === 'all' || rowStatus === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+async function exportDriveStats(eventId) {
+    try {
+        const response = await apiFetch(`/api/participations/event/${eventId}/export`);
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = `drive_stats_${eventId}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            return;
+        }
+    } catch (error) {
+        console.warn('Backend export not available, falling back to CSV:', error);
+    }
+
+    // Fallback: Generate CSV from table data
+    try {
+        const stats = await fetchDriveStats(eventId);
+        if (!stats.participations || stats.participations.length === 0) {
+            alert('No data to export.');
+            return;
+        }
+
+        const headers = ['Student Name', 'Admission Number', 'Department', 'Batch', 'CGPA', 'Email', 'Mobile', 'Status', 'Registered Date'];
+        const rows = stats.participations.map(p => {
+            const s = p.student || {};
+            const name = ((s.studentFirstName || '') + ' ' + (s.studentLastName || '')).trim();
+            const admNo = s.studentAdmissionNumber || p.studentAdmissionNumber || '';
+            const dept = s.department || '';
+            const batch = s.batch || '';
+            const cgpa = s.cgpa || '';
+            const email = s.emailId || '';
+            const mobile = s.mobileNo || '';
+            const status = p.participationStatus || p.status || 'REGISTERED';
+            const date = p.createdAt ? new Date(p.createdAt).toLocaleDateString() : '';
+            return [name, admNo, dept, batch, cgpa, email, mobile, status, date];
+        });
+
+        let csv = headers.join(',') + '\n';
+        rows.forEach(row => {
+            csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',') + '\n';
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = `drive_stats_${eventId}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+    } catch (error) {
+        console.error('Error exporting drive stats:', error);
+        alert('Failed to export. Please try again.');
+    }
 }
 
 // =============================================
@@ -2050,3 +2496,229 @@ function handleFormSubmit(event) {
     event.preventDefault();
     registerStudent();
 }
+
+// =============================================
+// 15. STUDENT HISTORY REPORT
+// =============================================
+
+let currentHistoryData = null;
+
+async function searchStudentHistory() {
+    const admissionInput = document.getElementById('historyAdmissionNumber');
+    if (!admissionInput) return;
+
+    const admissionNumber = admissionInput.value.trim();
+
+    if (!admissionNumber) {
+        showHistoryMessage('Please enter a student admission number', 'error');
+        return;
+    }
+
+    // Hide previous results
+    document.getElementById('historyStudentInfo').style.display = 'none';
+    document.getElementById('historySummary').style.display = 'none';
+    document.getElementById('historyTableContainer').style.display = 'none';
+
+    // Show loading
+    document.getElementById('historyLoading').style.display = 'block';
+
+    try {
+        const response = await apiFetch(`/api/reports/student/${encodeURIComponent(admissionNumber)}`);
+        const result = await response.json();
+
+        document.getElementById('historyLoading').style.display = 'none';
+
+        if (!result.success) {
+            showHistoryMessage(result.message || 'Student not found', 'error');
+            return;
+        }
+
+        currentHistoryData = result;
+
+        // Display student info
+        displayHistoryStudentInfo(result.student);
+
+        // Display summary
+        displayHistorySummary(result.summary);
+
+        // Display event table
+        displayHistoryTable(result.events);
+
+        if (result.events.length === 0) {
+            showHistoryMessage('This student has not registered for any events yet.', 'info');
+        } else {
+            showHistoryMessage(`Found ${result.events.length} event(s) for this student`, 'success');
+        }
+
+    } catch (error) {
+        document.getElementById('historyLoading').style.display = 'none';
+        console.error('Error loading student history:', error);
+        showHistoryMessage('Error loading report. Please try again.', 'error');
+    }
+}
+
+function displayHistoryStudentInfo(student) {
+    const container = document.getElementById('historyStudentInfo');
+    container.style.display = 'block';
+
+    const initials = ((student.name || '').split(' ').map(w => w[0] || '').join('')).toUpperCase() || 'ST';
+
+    document.getElementById('historyStudentAvatar').textContent = initials;
+    document.getElementById('historyStudentName').textContent = student.name || 'Unknown';
+    document.getElementById('historyStudentDetails').textContent =
+        `${student.department || 'N/A'} | Batch ${student.batch || 'N/A'} | CGPA: ${student.cgpa || 'N/A'} | ${student.course || ''} | 10th: ${student.tenthPercentage || 'N/A'}% | 12th: ${student.twelfthPercentage || 'N/A'}%`;
+    document.getElementById('historyStudentEmail').textContent = student.email || 'No email';
+    document.getElementById('historyStudentPhone').textContent = student.phone || 'No phone';
+}
+
+function displayHistorySummary(summary) {
+    const container = document.getElementById('historySummary');
+    container.style.display = 'block';
+
+    document.getElementById('summaryEligible').textContent = summary.totalRegistered || 0;
+    document.getElementById('summaryParticipated').textContent = summary.totalAttempted || 0;
+    document.getElementById('summaryMissed').textContent = summary.totalAbsent || 0;
+    document.getElementById('summarySelected').textContent = summary.totalSelected || 0;
+    document.getElementById('summaryRate').textContent = summary.totalPending || 0;
+}
+
+function displayHistoryTable(events) {
+    const container = document.getElementById('historyTableContainer');
+    const tbody = document.getElementById('historyTableBody');
+
+    container.style.display = 'block';
+    tbody.innerHTML = '';
+
+    if (!events || events.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="padding: 3rem; text-align: center; color: #64748b;">
+                    <span class="material-symbols-outlined" style="font-size: 3rem; display: block; margin-bottom: 0.5rem; opacity: 0.5;">event_busy</span>
+                    This student has not registered for any events yet.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    events.forEach(event => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-status', event.status || 'REGISTERED');
+
+        let eventDate = 'N/A';
+        if (event.registrationStart) {
+            try {
+                eventDate = new Date(event.registrationStart).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+            } catch (e) { eventDate = 'N/A'; }
+        }
+
+        let registeredDate = 'N/A';
+        if (event.registeredAt) {
+            try {
+                registeredDate = new Date(event.registeredAt).toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                });
+            } catch (e) { registeredDate = 'N/A'; }
+        }
+
+        const status = event.status || 'REGISTERED';
+
+        row.innerHTML = `
+            <td>
+                <div class="history-company-cell">
+                    <div class="history-company-logo">
+                        ${(event.organizingCompany || 'C').charAt(0).toUpperCase()}
+                    </div>
+                    <span class="history-company-name">${event.organizingCompany || 'Unknown'}</span>
+                </div>
+            </td>
+            <td>${event.eventName || 'N/A'}</td>
+            <td>${event.jobRole || 'Not specified'}</td>
+            <td>${eventDate}</td>
+            <td>${registeredDate}</td>
+            <td>${event.expectedPackage ? '₹' + event.expectedPackage + ' LPA' : 'N/A'}</td>
+            <td>
+                <span class="history-status-badge ${status}">${status}</span>
+            </td>
+            <td>
+                <span class="history-remarks" title="${event.description || ''}">${event.description || '-'}</span>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+function filterHistory(type) {
+    document.querySelectorAll('.history-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    const btnId = type === 'all' ? 'filterAll' :
+                  type === 'selected' ? 'filterSelected' :
+                  type === 'pending' ? 'filterPending' :
+                  type === 'rejected' ? 'filterRejected' : 'filterAll';
+
+    const activeBtn = document.getElementById(btnId);
+    if (activeBtn) {
+        activeBtn.classList.add('active');
+    }
+
+    const rows = document.querySelectorAll('#historyTableBody tr');
+    rows.forEach(row => {
+        const rowStatus = row.getAttribute('data-status');
+        if (!rowStatus) {
+            row.style.display = '';
+            return;
+        }
+
+        if (type === 'all') {
+            row.style.display = '';
+        } else if (type === 'selected' && rowStatus === 'SELECTED') {
+            row.style.display = '';
+        } else if (type === 'pending' && (rowStatus === 'REGISTERED' || rowStatus === 'ATTEMPTED')) {
+            row.style.display = '';
+        } else if (type === 'rejected' && (rowStatus === 'REJECTED' || rowStatus === 'ABSENT')) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+}
+
+function showHistoryMessage(message, type) {
+    const messageDiv = document.getElementById('historySearchMessage');
+    if (!messageDiv) return;
+
+    const colors = {
+        error: { bg: '#fee2e2', color: '#dc2626', icon: 'error' },
+        success: { bg: '#dcfce7', color: '#16a34a', icon: 'check_circle' },
+        info: { bg: '#dbeafe', color: '#1d4ed8', icon: 'info' }
+    };
+
+    const style = colors[type] || colors.info;
+
+    messageDiv.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1rem; border-radius: 8px; background: ${style.bg}; color: ${style.color};">
+            <span class="material-symbols-outlined" style="font-size: 1.1rem;">${style.icon}</span>
+            <span style="font-weight: 500; font-size: 0.875rem;">${message}</span>
+        </div>
+    `;
+    messageDiv.style.display = 'block';
+
+    setTimeout(() => { messageDiv.style.display = 'none'; }, 5000);
+}
+
+// Enter key support
+document.addEventListener('DOMContentLoaded', function () {
+    const historyInput = document.getElementById('historyAdmissionNumber');
+    if (historyInput) {
+        historyInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchStudentHistory();
+            }
+        });
+    }
+});
