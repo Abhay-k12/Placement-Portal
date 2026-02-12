@@ -107,7 +107,7 @@ public class StudentController {
         try {
             studentService.deleteStudent(admissionNumber);
             return ResponseEntity.ok("Student deleted successfully");
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }

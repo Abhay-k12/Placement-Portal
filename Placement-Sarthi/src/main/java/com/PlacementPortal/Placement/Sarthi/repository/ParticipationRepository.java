@@ -19,4 +19,8 @@ public interface ParticipationRepository extends MongoRepository<Participation, 
     List<Participation> findByOrganizingCompany(String companyName);
 
     Optional<Participation> findByStudentAdmissionNumberAndEventId(String admissionNumber, String eventId);
+
+    void deleteByEventId(String eventId);
+
+    void deleteByStudentAdmissionNumber(String studentAdmissionNumber);
 }

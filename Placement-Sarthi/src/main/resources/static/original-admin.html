@@ -27,7 +27,7 @@
                     Dashboard
                 </a>
                 <a href="#" class="navbar-item" onclick="document.querySelectorAll('main').forEach(p=>p.style.display='none'); document.getElementById('register-students').style.display='block'; this.parentElement.querySelectorAll('a').forEach(l=>l.classList.remove('active')); this.classList.add('active'); return false;">
-                    Register Students
+                    Manage Students
                 </a>
                 <a href="#" class="navbar-item" onclick="document.querySelectorAll('main').forEach(p=>p.style.display='none'); document.getElementById('profile').style.display='block'; this.parentElement.querySelectorAll('a').forEach(l=>l.classList.remove('active')); this.classList.add('active'); return false;">
                     Profile
@@ -1013,6 +1013,7 @@
         </main>
 
         <!-- Register Students -->
+        <!-- Register Students -->
         <main id="register-students" class="page-content" style="display:none;">
             <div class="register-header">
                 <h1>Student Registration Management</h1>
@@ -1039,6 +1040,7 @@
             <div class="registration-tabs">
                 <button class="tab-btn active" onclick="showTab('individual', this)">Individual Registration</button>
                 <button class="tab-btn" onclick="showTab('bulk', this)">Bulk Upload</button>
+                <button class="tab-btn" onclick="showTab('studentHistory', this)">Student History</button>
             </div>
 
             <!-- Individual Registration Form -->
@@ -1191,10 +1193,7 @@
                                 <span class="material-symbols-outlined">cloud_upload</span>
                             </div>
                             <p id="uploadText">Use the buttons below to select and upload your file</p>
-
-                            <!-- File Input -->
                             <input type="file" id="bulkFileInput" accept=".xlsx,.xls,.csv" style="display: none;">
-
                             <div style="display: flex; flex-direction: column; gap: 1rem; align-items: center; width: 100%;">
                                 <button type="button" onclick="handleChooseFile()" class="upload-btn" style="width: 200px; margin-top: 2%;">
                                     Choose File
@@ -1203,14 +1202,9 @@
                                     Upload & Process
                                 </button>
                             </div>
-
-                            <!-- File Info Display -->
                             <div id="fileInfoContainer" style="width: 100%; margin-top: 1rem;"></div>
-
-                            <!-- Messages Display -->
                             <div id="messageContainer" style="width: 100%; margin-top: 1rem;"></div>
                         </div>
-
                         <div class="upload-info" style="text-align:center; margin-top:1rem;">
                             <p style="display:flex;align-items:center;justify-content:center;gap:0.5rem;">
                                 <span style="color:#3b82f6; font-weight:600;">i</span> Supported formats: .xlsx, .xls, .csv
@@ -1221,6 +1215,121 @@
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Student History -->
+            <div class="tab-content" id="studentHistory" style="display:none;">
+                <div class="student-history-section">
+
+                    <!-- Search Bar -->
+                    <div class="form-section">
+                        <h3>
+                            <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.5rem;">search</span>
+                            Search Student Placement History
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group" style="flex: 1;">
+                                <label>Admission Number</label>
+                                <input type="text" id="historyAdmissionNumber"
+                                       placeholder="Enter student admission number (e.g., ADM001)">
+                            </div>
+                            <div class="form-group" style="justify-content: flex-end;">
+                                <label>&nbsp;</label>
+                                <button onclick="searchStudentHistory()" class="btn-primary" style="width: fit-content;">
+                                    <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.25rem; font-size: 1.1rem;">search</span>
+                                    Search
+                                </button>
+                            </div>
+                        </div>
+                        <div id="historySearchMessage" style="margin-top: 1rem; display: none;"></div>
+                    </div>
+
+                    <!-- Student Info Card -->
+                    <div id="historyStudentInfo" style="display: none;">
+                        <div class="history-student-card">
+                            <div class="history-student-card-inner">
+                                <div class="history-avatar" id="historyStudentAvatar">ST</div>
+                                <div class="history-student-meta">
+                                    <h2 id="historyStudentName">Student Name</h2>
+                                    <p id="historyStudentDetails">Department | Batch | CGPA</p>
+                                </div>
+                                <div class="history-contact-badges">
+                                    <span class="history-badge" id="historyStudentEmail">email</span>
+                                    <span class="history-badge" id="historyStudentPhone">phone</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Cards -->
+                    <div id="historySummary" style="display: none;">
+                        <div class="history-summary-grid">
+                            <div class="history-summary-card" style="border-left-color: #3b82f6;">
+                                <div class="history-summary-value" style="color: #3b82f6;" id="summaryEligible">0</div>
+                                <div class="history-summary-label">Total Registered</div>
+                            </div>
+                            <div class="history-summary-card" style="border-left-color: #10b981;">
+                                <div class="history-summary-value" style="color: #10b981;" id="summarySelected">0</div>
+                                <div class="history-summary-label">Selected</div>
+                            </div>
+                            <div class="history-summary-card" style="border-left-color: #f59e0b;">
+                                <div class="history-summary-value" style="color: #f59e0b;" id="summaryParticipated">0</div>
+                                <div class="history-summary-label">Attempted</div>
+                            </div>
+                            <div class="history-summary-card" style="border-left-color: #ef4444;">
+                                <div class="history-summary-value" style="color: #ef4444;" id="summaryMissed">0</div>
+                                <div class="history-summary-label">Absent</div>
+                            </div>
+                            <div class="history-summary-card" style="border-left-color: #8b5cf6;">
+                                <div class="history-summary-value" style="color: #8b5cf6;" id="summaryRate">0</div>
+                                <div class="history-summary-label">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Event History Table -->
+                    <div id="historyTableContainer" style="display: none;">
+                        <div class="form-section">
+                            <div class="history-table-header">
+                                <h3>
+                                    <span class="material-symbols-outlined" style="vertical-align: middle; margin-right: 0.5rem;">history</span>
+                                    Event History
+                                </h3>
+                                <div class="history-filter-group">
+                                    <button onclick="filterHistory('all')" class="history-filter-btn active" id="filterAll">All</button>
+                                    <button onclick="filterHistory('selected')" class="history-filter-btn" id="filterSelected">Selected</button>
+                                    <button onclick="filterHistory('pending')" class="history-filter-btn" id="filterPending">Pending</button>
+                                    <button onclick="filterHistory('rejected')" class="history-filter-btn" id="filterRejected">Rejected</button>
+                                </div>
+                            </div>
+                            <div style="overflow-x: auto;">
+                                <table class="history-table" id="historyTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Company</th>
+                                        <th>Event</th>
+                                        <th>Role</th>
+                                        <th>Event Date</th>
+                                        <th>Registered On</th>
+                                        <th>Package</th>
+                                        <th>Status</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="historyTableBody">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading State -->
+                    <div id="historyLoading" class="history-loading" style="display: none;">
+                        <span class="material-symbols-outlined" style="font-size: 3rem; animation: spin 1s linear infinite;">refresh</span>
+                        <h3>Loading Student History...</h3>
+                    </div>
+
                 </div>
             </div>
         </main>

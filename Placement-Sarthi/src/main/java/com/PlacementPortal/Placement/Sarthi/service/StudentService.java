@@ -1,15 +1,19 @@
 package com.PlacementPortal.Placement.Sarthi.service;
 
 import com.PlacementPortal.Placement.Sarthi.entity.Student;
+import com.PlacementPortal.Placement.Sarthi.repository.ParticipationRepository;
 import com.PlacementPortal.Placement.Sarthi.repository.StudentRepository;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.ByteArrayOutputStream;
 import java.util.List;
@@ -27,7 +31,12 @@ public class StudentService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private ParticipationRepository participationRepository;
+
     private static final String DEFAULT_PASSWORD = "gehu@123";
+
+    private static final Logger logger = LoggerFactory.getLogger(StudentService.class);
 
     public Student registerStudent(Student student) {
         if (studentRepository.existsByStudentAdmissionNumber(student.getStudentAdmissionNumber())) {
@@ -35,7 +44,6 @@ public class StudentService {
                     student.getStudentAdmissionNumber() + " already exists");
         }
 
-        // Always hash the default password on registration
         if (student.getPassword() == null || student.getPassword().isEmpty()) {
             student.setPassword(passwordEncoder.encode(DEFAULT_PASSWORD));
         } else {
@@ -70,20 +78,29 @@ public class StudentService {
         return studentRepository.save(student);
     }
 
-    public void deleteStudent(String admissionNumber) {
+    @Transactional
+    public void deleteStudent(String admissionNumber) throws Exception{
         if (!studentRepository.existsById(admissionNumber)) {
             throw new RuntimeException("Student not found with admission number: " + admissionNumber);
         }
+
+        try {
+            participationRepository.deleteByStudentAdmissionNumber(admissionNumber);
+            logger.info("Deleted all participation records for student: {}", admissionNumber);
+        } catch (Exception e) {
+            logger.error("Error deleting participations for student {}: {}", admissionNumber, e.getMessage());
+            throw new IllegalAccessException("Error deleting participations for student:" + admissionNumber +": "+ e.getMessage());
+        }
+
         studentRepository.deleteById(admissionNumber);
+        logger.info("Deleted student: {}", admissionNumber);
     }
 
     public boolean studentExists(String admissionNumber) {
         return studentRepository.existsByStudentAdmissionNumber(admissionNumber);
     }
 
-    /**
-     * Change student password. Verifies current password first.
-     */
+    /** Change student password. Verifies current password first. **/
     public boolean changePassword(String admissionNumber, String currentPassword, String newPassword) {
         Optional<Student> studentOpt = studentRepository.findByStudentAdmissionNumber(admissionNumber);
         if (studentOpt.isEmpty()) {
@@ -101,10 +118,7 @@ public class StudentService {
         return true;
     }
 
-    /**
-     * MongoDB-based flexible filtering using MongoTemplate + Criteria.
-     * Replaces JpaSpecificationExecutor.
-     */
+    /** MongoDB-based flexible filtering using MongoTemplate + Criteria. Replaces JpaSpecificationExecutor **/
     public List<Student> filterStudents(String department, Double minCgpa, Integer maxBacklogs, String batch) {
         Query query = new Query();
 

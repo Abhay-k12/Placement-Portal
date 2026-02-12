@@ -66,7 +66,7 @@ public class SecurityConfig {
 
                         // ===== PROTECTED: All other API endpoints need authentication =====
                         .requestMatchers("/api/**").authenticated()
-
+                        .requestMatchers("/api/reports/**").authenticated()
                         // ===== Everything else (non-API): allow =====
                         .anyRequest().permitAll()
                 )

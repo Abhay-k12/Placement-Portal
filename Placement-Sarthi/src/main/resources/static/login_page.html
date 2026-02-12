@@ -33,177 +33,173 @@
 
   <!-- Login Section -->
   <section class="login-section">
-    <div class="login-container">
-      <div class="login-info">
-        <h2 id="roleWelcome">Welcome Back, Student!</h2>
-        <p id="roleDescription">Access your placement portal account to explore opportunities, apply for jobs, and track your applications.</p>
-        
-        <div class="features-list" id="roleFeatures">
-          <!-- Student Features -->
-          <div class="role-info active" id="studentFeatures">
-            <div class="feature-item">
-              <i class="ri-briefcase-line"></i>
-              <span>Access to 200+ recruiting companies</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-calendar-check-line"></i>
-              <span>Track your application status</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-file-list-3-line"></i>
-              <span>Manage your resume and profile</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-notification-3-line"></i>
-              <span>Get notified about new opportunities</span>
-            </div>
+      <div class="login-container">
+          <div class="login-info">
+              <h2 id="roleWelcome">Welcome Back, Student!</h2>
+              <p id="roleDescription">Access your placement portal account to explore opportunities, apply for jobs, and track your applications.</p>
+
+              <div class="features-list" id="roleFeatures">
+                  <!-- Student Features -->
+                  <div class="role-info active" id="studentFeatures">
+                      <div class="feature-item">
+                          <i class="ri-briefcase-line"></i>
+                          <span>Access to 200+ recruiting companies</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-calendar-check-line"></i>
+                          <span>Track your application status</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-file-list-3-line"></i>
+                          <span>Manage your resume and profile</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-notification-3-line"></i>
+                          <span>Get notified about new opportunities</span>
+                      </div>
+                  </div>
+
+                  <!-- Admin Features -->
+                  <div class="role-info" id="adminFeatures">
+                      <div class="feature-item">
+                          <i class="ri-dashboard-line"></i>
+                          <span>Manage placement portal operations</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-user-settings-line"></i>
+                          <span>Oversee student and company accounts</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-bar-chart-box-line"></i>
+                          <span>View analytics and placement statistics</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-settings-3-line"></i>
+                          <span>Configure system settings and preferences</span>
+                      </div>
+                  </div>
+
+                  <!-- Company Features -->
+                  <div class="role-info" id="companyFeatures">
+                      <div class="feature-item">
+                          <i class="ri-search-eye-line"></i>
+                          <span>Access talented student profiles</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-calendar-event-line"></i>
+                          <span>Schedule campus drives and interviews</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-file-list-2-line"></i>
+                          <span>Post job openings and internships</span>
+                      </div>
+                      <div class="feature-item">
+                          <i class="ri-team-line"></i>
+                          <span>Manage recruitment process</span>
+                      </div>
+                  </div>
+              </div>
           </div>
-          
-          <!-- Admin Features -->
-          <div class="role-info" id="adminFeatures">
-            <div class="feature-item">
-              <i class="ri-dashboard-line"></i>
-              <span>Manage placement portal operations</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-user-settings-line"></i>
-              <span>Oversee student and company accounts</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-bar-chart-box-line"></i>
-              <span>View analytics and placement statistics</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-settings-3-line"></i>
-              <span>Configure system settings and preferences</span>
-            </div>
+
+          <div class="login-form-container">
+              <h2 id="formTitle">Student Login</h2>
+              <p id="formDescription">Enter your credentials to access your account</p>
+
+              <div id="loginErrorMessage" class="error-message"></div>
+
+              <!-- Role Selection -->
+              <div class="role-selection">
+                  <div class="role-option active" data-role="student">
+                      <i class="ri-user-line"></i>
+                      <span>Student</span>
+                  </div>
+                  <div class="role-option" data-role="admin">
+                      <i class="ri-admin-line"></i>
+                      <span>Admin</span>
+                  </div>
+                  <div class="role-option" data-role="company">
+                      <i class="ri-building-line"></i>
+                      <span>Company</span>
+                  </div>
+              </div>
+
+              <form id="loginForm">
+                  <!-- Student Form -->
+                  <div class="role-info active" id="studentForm">
+                      <div class="form-group">
+                          <label class="form-label" for="studentId">Student ID</label>
+                          <div class="input-group">
+                              <input type="text" id="studentId" name="studentId" class="form-control" placeholder="Enter your student ID" required>
+                              <div class="input-icon">
+                                  <i class="ri-user-line"></i>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label" for="studentPassword">Password</label>
+                          <div class="input-group">
+                              <input type="password" id="studentPassword" name="studentPassword" class="form-control" placeholder="Enter your password" required>
+                              <button type="button" class="password-toggle" onclick="togglePassword('studentPassword', this)">
+                                  <i class="ri-eye-off-line"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div><!-- END studentForm -->
+
+                  <!-- Admin Form -->
+                  <div class="role-info" id="adminForm">
+                      <div class="form-group">
+                          <label class="form-label" for="adminId">Admin ID</label>
+                          <div class="input-group">
+                              <input type="text" id="adminId" name="adminId" class="form-control" placeholder="Enter your admin ID">
+                              <div class="input-icon">
+                                  <i class="ri-admin-line"></i>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label" for="adminPassword">Password</label>
+                          <div class="input-group">
+                              <input type="password" id="adminPassword" name="adminPassword" class="form-control" placeholder="Enter your password">
+                              <button type="button" class="password-toggle" onclick="togglePassword('adminPassword', this)">
+                                  <i class="ri-eye-off-line"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div><!-- END adminForm -->
+
+                  <!-- Company Form -->
+                  <div class="role-info" id="companyForm">
+                      <div class="form-group">
+                          <label class="form-label" for="companyId">Company ID</label>
+                          <div class="input-group">
+                              <input type="text" id="companyId" name="companyId" class="form-control" placeholder="Enter your company ID">
+                              <div class="input-icon">
+                                  <i class="ri-building-line"></i>
+                              </div>
+                          </div>
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label" for="companyPassword">Password</label>
+                          <div class="input-group">
+                              <input type="password" id="companyPassword" name="companyPassword" class="form-control" placeholder="Enter your password">
+                              <button type="button" class="password-toggle" onclick="togglePassword('companyPassword', this)">
+                                  <i class="ri-eye-off-line"></i>
+                              </button>
+                          </div>
+                      </div>
+                  </div><!-- END companyForm -->
+
+                  <div class="forgot-password">
+                      <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+                  </div>
+
+                  <button type="submit" class="login-btn">
+                      <i class="ri-login-box-line"></i> <span id="loginBtnText">Login as Student</span>
+                  </button>
+              </form>
           </div>
-          
-          <!-- Company Features -->
-          <div class="role-info" id="companyFeatures">
-            <div class="feature-item">
-              <i class="ri-search-eye-line"></i>
-              <span>Access talented student profiles</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-calendar-event-line"></i>
-              <span>Schedule campus drives and interviews</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-file-list-2-line"></i>
-              <span>Post job openings and internships</span>
-            </div>
-            <div class="feature-item">
-              <i class="ri-team-line"></i>
-              <span>Manage recruitment process</span>
-            </div>
-          </div>
-        </div>
       </div>
-      
-      <div class="login-form-container">
-        <h2 id="formTitle">Student Login</h2>
-        <p id="formDescription">Enter your credentials to access your account</p>
-
-          <div id="loginErrorMessage" class="error-message"></div>
-
-          <!-- Role Selection -->
-        <div class="role-selection">
-          <div class="role-option active" data-role="student">
-            <i class="ri-user-line"></i>
-            <span>Student</span>
-          </div>
-          <div class="role-option" data-role="admin">
-            <i class="ri-admin-line"></i>
-            <span>Admin</span>
-          </div>
-          <div class="role-option" data-role="company">
-            <i class="ri-building-line"></i>
-            <span>Company</span>
-          </div>
-        </div>
-        
-        <form id="loginForm">
-          <!-- Student Form -->
-          <div class="role-info active" id="studentForm">
-            <div class="form-group">
-              <label class="form-label" for="studentId">Student ID</label>
-              <div class="input-group">
-                <input type="text" id="studentId" name="studentId" class="form-control" placeholder="Enter your student ID" required>
-                <div class="input-icon">
-                  <i class="ri-user-line"></i>
-                </div>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label" for="studentPassword">Password</label>
-              <div class="input-group">
-                <input type="password" id="studentPassword" name="studentPassword" class="form-control" placeholder="Enter your password" required>
-                <div class="input-icon">
-                  <i class="ri-lock-line"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Admin Form -->
-          <div class="role-info" id="adminForm">
-            <div class="form-group">
-              <label class="form-label" for="adminId">Admin ID</label>
-              <div class="input-group">
-                <input type="text" id="adminId" name="adminId" class="form-control" placeholder="Enter your admin ID">
-                <div class="input-icon">
-                  <i class="ri-admin-line"></i>
-                </div>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label" for="adminPassword">Password</label>
-              <div class="input-group">
-                <input type="password" id="adminPassword" name="adminPassword" class="form-control" placeholder="Enter your password">
-                <div class="input-icon">
-                  <i class="ri-lock-line"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Company Form -->
-          <div class="role-info" id="companyForm">
-            <div class="form-group">
-              <label class="form-label" for="companyId">Company ID</label>
-              <div class="input-group">
-                <input type="text" id="companyId" name="companyId" class="form-control" placeholder="Enter your company ID">
-                <div class="input-icon">
-                  <i class="ri-building-line"></i>
-                </div>
-              </div>
-            </div>
-            
-            <div class="form-group">
-              <label class="form-label" for="companyPassword">Password</label>
-              <div class="input-group">
-                <input type="password" id="companyPassword" name="companyPassword" class="form-control" placeholder="Enter your password">
-                <div class="input-icon">
-                  <i class="ri-lock-line"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="forgot-password">
-            <a href="#" id="forgotPasswordLink">Forgot Password?</a>
-          </div>
-          
-          <button type="submit" class="login-btn">
-            <i class="ri-login-box-line"></i> <span id="loginBtnText">Login as Student</span>
-          </button>
-
-        </form>
-      </div>
-    </div>
   </section>
 
   <!-- Forgot Password Modal -->

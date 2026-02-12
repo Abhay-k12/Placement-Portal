@@ -278,33 +278,7 @@ const successMessage = document.getElementById('successMessage');
 if (forgotPasswordLink) {
     forgotPasswordLink.addEventListener('click', function (e) {
         e.preventDefault();
-
-        const roleLabels = { student: 'Student ID', admin: 'Admin ID', company: 'Company ID' };
-        const rolePlaceholders = {
-            student: 'Enter your student ID',
-            admin: 'Enter your admin ID',
-            company: 'Enter your company ID'
-        };
-        const modalTitles = {
-            student: 'Reset Your Password',
-            admin: 'Reset Admin Password',
-            company: 'Reset Company Password'
-        };
-        const modalDescriptions = {
-            student: 'Enter your student ID to receive a password reset link on your registered email.',
-            admin: 'Enter your admin ID to receive a password reset link on your registered email.',
-            company: 'Enter your company ID to receive a password reset link on your registered email.'
-        };
-
-        const el = (id) => document.getElementById(id);
-        if (el('modalTitle')) el('modalTitle').textContent = modalTitles[currentRole];
-        if (el('modalDescription')) el('modalDescription').textContent = modalDescriptions[currentRole];
-        if (el('modalLabel')) el('modalLabel').textContent = roleLabels[currentRole];
-        if (el('resetUserId')) el('resetUserId').placeholder = rolePlaceholders[currentRole];
-        if (el('resetBtnText')) el('resetBtnText').textContent = 'Send Reset Link';
-        if (el('successText')) el('successText').textContent = 'Password reset link has been sent to your registered email!';
-
-        if (forgotPasswordModal) forgotPasswordModal.style.display = 'flex';
+        alert("Kindly Contact the Admin. This Feature is currently disabled.")
     });
 }
 
@@ -402,5 +376,23 @@ function checkExistingLogin() {
         } catch (e) {
             sessionStorage.clear();
         }
+    }
+}
+
+// =============================================
+// PASSWORD SHOW/HIDE TOGGLE
+// =============================================
+function togglePassword(inputId, button) {
+    const input = document.getElementById(inputId);
+    const icon = button.querySelector('i');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('ri-eye-off-line');
+        icon.classList.add('ri-eye-line');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('ri-eye-line');
+        icon.classList.add('ri-eye-off-line');
     }
 }
