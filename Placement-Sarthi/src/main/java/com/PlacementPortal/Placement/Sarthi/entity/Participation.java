@@ -18,9 +18,9 @@ public class Participation {
     private String id;
 
     private String studentAdmissionNumber;
+
     private String eventId;
 
-    // Denormalized data for faster queries (MongoDB pattern)
     private String studentFirstName;
 
     private String studentLastName;
@@ -62,5 +62,13 @@ public class Participation {
 
     public void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public ParticipationStatus getParticipationStatus() {
+        return status;
+    }
+
+    public void setParticipationStatus(ParticipationStatus participationStatus) {
+        this.status = participationStatus;
     }
 }
