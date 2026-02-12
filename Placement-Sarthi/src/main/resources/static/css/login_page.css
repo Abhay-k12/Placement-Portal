@@ -599,3 +599,34 @@
   .input-group.error .input-icon:not(.error-icon) {
       display: none;
   }
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    z-index: 2;
+    transition: color 0.2s ease;
+}
+
+.password-toggle:hover {
+    color: #1a73e8;
+}
+
+.input-group {
+    position: relative;
+}
+
+.input-group input[type="password"],
+.input-group input[type="text"] {
+    padding-right: 2.75rem;
+}
