@@ -1,6 +1,5 @@
 // =============================================
 // MODAL NOTIFICATION SYSTEM
-// Add this right after the apiFetch function
 // =============================================
 
 // Inject modal animation keyframes
