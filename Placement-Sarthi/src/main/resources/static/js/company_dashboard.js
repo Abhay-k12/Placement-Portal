@@ -1,4 +1,239 @@
 // =============================================
+// MODAL NOTIFICATION SYSTEM
+// =============================================
+
+// Inject modal animation keyframes
+(function injectModalStyles() {
+    if (document.getElementById('adminModalStyles')) return;
+    const style = document.createElement('style');
+    style.id = 'adminModalStyles';
+    style.textContent = `
+        @keyframes adminModalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes adminModalSlideIn {
+            from { transform: translateY(-20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+// Toast notification — replaces simple alert() for status messages
+function showNotification(message, type = 'info', duration = 4000) {
+    let container = document.getElementById('adminToastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'adminToastContainer';
+        container.style.cssText = 'position:fixed; top:20px; right:20px; z-index:99999; display:flex; flex-direction:column; gap:0.75rem; max-width:420px;';
+        document.body.appendChild(container);
+    }
+
+    const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+    const bgColors = {
+        success: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+        error: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+        warning: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+        info: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)'
+    };
+
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        background: ${bgColors[type] || bgColors.info}; color: white;
+        padding: 1rem 1.25rem; border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        display: flex; align-items: center; gap: 0.75rem;
+        transform: translateX(120%);
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        font-family: 'Inter', sans-serif; font-size: 0.875rem; font-weight: 500;
+        cursor: pointer;
+    `;
+
+    toast.innerHTML = `
+        <span class="material-symbols-outlined" style="font-size:1.25rem; flex-shrink:0;">${icons[type] || icons.info}</span>
+        <span style="flex:1;">${message}</span>
+        <button style="background:none; border:none; color:white; cursor:pointer; font-size:1.25rem; padding:0; opacity:0.8; flex-shrink:0;" onclick="this.parentElement.remove()">×</button>
+    `;
+
+    container.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.transform = 'translateX(0)'; });
+
+    const timeout = setTimeout(() => {
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    }, duration);
+
+    toast.addEventListener('click', () => {
+        clearTimeout(timeout);
+        toast.style.transform = 'translateX(120%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400);
+    });
+}
+
+// Alert modal — replaces alert(), returns Promise
+function showAlertModal(message, title = 'Notice', type = 'info') {
+    return new Promise(resolve => {
+        const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info' };
+        const iconColors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6' };
+
+        const overlay = document.createElement('div');
+        overlay.id = 'adminAlertModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:${iconColors[type] || iconColors.info}15;
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:${iconColors[type] || iconColors.info};">${icons[type] || icons.info}</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:2rem; white-space:pre-wrap;">${message}</div>
+                <div style="display:flex; justify-content:flex-end;">
+                    <button id="adminAlertOkBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                        color: white; padding: 0.75rem 2rem; border: none; border-radius: 10px;
+                        font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3); transition: all 0.2s ease;">OK</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const okBtn = document.getElementById('adminAlertOkBtn');
+        const close = () => { overlay.remove(); resolve(); };
+        okBtn.addEventListener('click', close);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Enter' || e.key === 'Escape') { document.removeEventListener('keydown', handler); close(); }
+        });
+        okBtn.focus();
+    });
+}
+
+// Confirm modal — replaces confirm(), returns Promise<boolean>
+function showConfirmModal(message, title = 'Confirm Action', type = 'warning') {
+    return new Promise(resolve => {
+        const icons = { success: 'check_circle', error: 'error', warning: 'warning', info: 'info', danger: 'dangerous' };
+        const iconColors = { success: '#10b981', error: '#ef4444', warning: '#f59e0b', info: '#3b82f6', danger: '#ef4444' };
+
+        const confirmBtnBg = (type === 'danger' || type === 'error')
+            ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)'
+            : 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+
+        const overlay = document.createElement('div');
+        overlay.id = 'adminConfirmModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 480px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:${iconColors[type] || iconColors.warning}15;
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:${iconColors[type] || iconColors.warning};">${icons[type] || icons.warning}</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:2rem; white-space:pre-wrap;">${message}</div>
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <button id="adminConfirmCancelBtn" style="background: #f1f5f9; color: #64748b; padding: 0.75rem 1.5rem;
+                        border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;">Cancel</button>
+                    <button id="adminConfirmOkBtn" style="background: ${confirmBtnBg}; color: white; padding: 0.75rem 1.5rem;
+                        border: none; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3);">Confirm</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const okBtn = document.getElementById('adminConfirmOkBtn');
+        const cancelBtn = document.getElementById('adminConfirmCancelBtn');
+        const close = (result) => { overlay.remove(); resolve(result); };
+        okBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(false); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(false); }
+            if (e.key === 'Enter') { document.removeEventListener('keydown', handler); close(true); }
+        });
+        okBtn.focus();
+    });
+}
+
+// Prompt modal — replaces prompt(), returns Promise<string|null>
+function showPromptModal(message, title = 'Input Required', defaultValue = '', inputType = 'text') {
+    return new Promise(resolve => {
+        const overlay = document.createElement('div');
+        overlay.id = 'adminPromptModal';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 99999; padding: 2rem; animation: adminModalFadeIn 0.25s ease;
+        `;
+
+        overlay.innerHTML = `
+            <div style="background: white; border-radius: 16px; padding: 2rem; max-width: 450px; width: 100%;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: adminModalSlideIn 0.3s ease; font-family: 'Inter', sans-serif;">
+                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+                    <div style="width:48px; height:48px; border-radius:12px; background:rgba(59,130,246,0.1);
+                        display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <span class="material-symbols-outlined" style="font-size:1.5rem; color:#3b82f6;">edit</span>
+                    </div>
+                    <h3 style="margin:0; font-size:1.125rem; font-weight:700; color:#1e293b;">${title}</h3>
+                </div>
+                <div style="color:#374151; font-size:0.9rem; line-height:1.6; margin-bottom:1rem;">${message}</div>
+                <input id="adminPromptInput" type="${inputType}" value="${defaultValue}" style="
+                    width: 100%; padding: 0.875rem 1rem; border: 2px solid #e5e7eb; border-radius: 10px;
+                    font-size: 0.9rem; outline: none; transition: all 0.2s ease;
+                    font-family: 'Inter', sans-serif; margin-bottom: 1.5rem; box-sizing: border-box;
+                " onfocus="this.style.borderColor='#3b82f6'; this.style.boxShadow='0 0 0 4px rgba(59,130,246,0.1)';"
+                  onblur="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none';" />
+                <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+                    <button id="adminPromptCancelBtn" style="background: #f1f5f9; color: #64748b; padding: 0.75rem 1.5rem;
+                        border: 1px solid #e2e8f0; border-radius: 10px; font-weight: 600; font-size: 0.875rem; cursor: pointer;">Cancel</button>
+                    <button id="adminPromptOkBtn" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+                        color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 10px;
+                        font-weight: 600; font-size: 0.875rem; cursor: pointer;
+                        box-shadow: 0 4px 12px rgba(59,130,246,0.3);">Submit</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+        const input = document.getElementById('adminPromptInput');
+        const okBtn = document.getElementById('adminPromptOkBtn');
+        const cancelBtn = document.getElementById('adminPromptCancelBtn');
+        const close = (value) => { overlay.remove(); resolve(value); };
+        okBtn.addEventListener('click', () => close(input.value));
+        cancelBtn.addEventListener('click', () => close(null));
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') close(input.value); });
+        document.addEventListener('keydown', function handler(e) {
+            if (e.key === 'Escape') { document.removeEventListener('keydown', handler); close(null); }
+        });
+        input.focus();
+        input.select();
+    });
+}
+
+
+// =============================================
 // HELPER: Authenticated fetch wrapper
 // =============================================
 function apiFetch(url, options = {}) {
@@ -38,7 +273,7 @@ let isEditMode = false;
 // =============================================
 // INITIALIZATION
 // =============================================
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     const isLoginPage = window.location.pathname.includes('login_page.html') ||
         window.location.pathname.includes('index.html') ||
         window.location.pathname === '/';
@@ -53,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const user = JSON.parse(currentUser);
     if (user.role !== 'company') {
-        alert('Access denied. Company privileges required.');
+        await showAlertModal('Access denied. Company privileges required.');
         window.location.href = 'login_page.html';
         return;
     }
@@ -164,25 +399,25 @@ function setupEventFormHandlers() {
 function setupGlobalSearch() {
     const form = document.querySelector('.search-form');
     if (form) {
-        form.addEventListener('submit', function (e) {
+        form.addEventListener('submit', async function (e) {
             e.preventDefault();
             const input = document.getElementById('globalSearchInput');
-            if (input) alert(`Searching for: ${input.value}`);
+            if (input) await showAlertModal(`Searching for: ${input.value}`);
         });
     }
 }
 
-function globalSearch(event) {
+async function globalSearch(event) {
     if (event) event.preventDefault();
     const input = document.getElementById('globalSearchInput');
-    if (input) alert(`Searching for: ${input.value}`);
+    if (input) await showAlertModal(`Searching for: ${input.value}`);
 }
 
 // =============================================
 // LOGOUT
 // =============================================
-function logoutCompany() {
-    if (confirm('Are you sure you want to logout?')) {
+async function logoutCompany() {
+    if (await showConfirmModal('Are you sure you want to logout?')) {
         apiFetch('/api/logout', { method: 'POST' })
             .then(() => { sessionStorage.clear(); window.location.href = 'login_page.html'; })
             .catch(() => { sessionStorage.clear(); window.location.href = 'login_page.html'; });
@@ -506,10 +741,10 @@ function validateEventForm(formData) {
 // =============================================
 // EVENT ACTIONS
 // =============================================
-function viewEventDetails(eventId) {
+async function viewEventDetails(eventId) {
     const event = currentEvents.find(e => String(e.eventId) === String(eventId));
     if (event) {
-        alert(
+        await showAlertModal(
             `Event Details:\n\n` +
             `ID: ${event.eventId}\n` +
             `Name: ${event.eventName}\n` +
@@ -589,7 +824,7 @@ async function updateEvent(eventId) {
 }
 
 async function deleteEvent(eventId) {
-    if (confirm('Delete this event? This cannot be undone.')) {
+    if (await showConfirmModal('Delete this event? This cannot be undone.')) {
         try {
             const response = await apiFetch(`/api/events/${eventId}`, { method: 'DELETE' });
             if (response.ok) {
@@ -1255,7 +1490,7 @@ window.showStudentFilterMessage = function (message, type) {
         cancelBtn.addEventListener('click', closeModal);
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
 
-        confirmBtn.addEventListener('click', function () {
+        confirmBtn.addEventListener('click', async function () {
             const eventId = document.getElementById('bulkEventId')?.value;
 
             if (!eventId) {
@@ -1263,7 +1498,11 @@ window.showStudentFilterMessage = function (message, type) {
                 return;
             }
 
-            if (!confirm(`Are you sure you want to finalize selection for event ${eventId}?\n\n${uploadedAdmissionNumbers.length} students will be marked as SELECTED.\nAll others will be marked as REJECTED.\n\nThis action cannot be easily undone.`)) {
+            const shouldProceed = await showConfirmModal(
+                `Are you sure you want to finalize selection for event ${eventId}?\n\n${uploadedAdmissionNumbers.length} students will be marked as SELECTED.\nAll others will be marked as REJECTED.\n\nThis action cannot be easily undone.`
+            );
+
+            if (!shouldProceed) {
                 return;
             }
 
