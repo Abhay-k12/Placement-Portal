@@ -11,6 +11,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -46,10 +47,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
-                        // ===== PUBLIC: Static resources (HTML, CSS, JS, images) =====
+                        // PUBLIC: Static resources
                         .requestMatchers(
                                 "/", "/index.html", "/login_page.html",
                                 "/student_dashboard.html", "/original-admin.html", "/company_dashboard.html",
@@ -57,23 +58,23 @@ public class SecurityConfig {
                                 "/favicon.ico"
                         ).permitAll()
 
-                        // ===== PUBLIC: Login/logout/session check =====
+                        // PUBLIC: Login/logout/session check
                         .requestMatchers("/api/login", "/api/logout", "/api/check-session").permitAll()
                         .requestMatchers("/api/*/forgot-password").permitAll()
 
-                        // ===== PUBLIC: Contact form =====
+                        // PUBLIC: Contact form
                         .requestMatchers("/api/messages/contact").permitAll()
 
-                        // ===== PROTECTED: All other API endpoints need authentication =====
+                        // PROTECTED: All other API endpoints need authentication
                         .requestMatchers("/api/**").authenticated()
                         .requestMatchers("/api/reports/**").authenticated()
-                        // ===== Everything else (non-API): allow =====
+                        // Everything else  allow
                         .anyRequest().permitAll()
                 )
 
                 // Disable Spring Security's default login page
-                .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable())
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
 
                 // Custom logout
                 .logout(logout -> logout
