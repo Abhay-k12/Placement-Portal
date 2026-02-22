@@ -493,7 +493,6 @@ Placement-Sarthi/
 
 ## 📸 Application Screenshots
 
-
 ### 🏠 Home Page
 <p align="center">
   <img src="Placement-Sarthi/src/main/resources/previewImages/homePage1.png" width="85%" alt="Home Page 1"/>
@@ -594,8 +593,6 @@ Placement-Sarthi/
 <br>
 
 ---
-
-
 
 ## 🧪 Testing & Validation
 <div align="center">
